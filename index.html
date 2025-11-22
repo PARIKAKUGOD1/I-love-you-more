@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PROTOCOL: ETERNITY</title>
     
-    <!-- Libraries -->
+    <!-- Core Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
@@ -46,12 +46,12 @@
             user-select: none;
         }
 
-        /* LAYERS */
+        /* --- LAYERS --- */
         #canvas-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
         .vignette { position: fixed; inset: 0; background: radial-gradient(circle at center, transparent 0%, #020203 140%); pointer-events: none; z-index: 1; }
         .scanlines { position: fixed; inset: 0; background: repeating-linear-gradient(to bottom, transparent, transparent 2px, rgba(0, 0, 0, 0.2) 2px, rgba(0, 0, 0, 0.2) 4px); pointer-events: none; z-index: 2; }
 
-        /* UI */
+        /* --- UI --- */
         .glass-panel {
             background: rgba(10, 12, 16, 0.7);
             backdrop-filter: blur(20px);
@@ -65,7 +65,6 @@
         .text-glow { text-shadow: 0 0 20px rgba(255, 0, 60, 0.6); }
         .text-cyan-glow { text-shadow: 0 0 20px rgba(0, 243, 255, 0.4); }
 
-        /* INPUT */
         #rigged-input {
             background: rgba(0,0,0,0.5);
             border: 1px solid rgba(255,255,255,0.1);
@@ -74,44 +73,44 @@
         }
         #rigged-input:focus { outline: none; border-color: #ff003c; box-shadow: 0 0 20px rgba(255, 0, 60, 0.3); }
 
-        /* OVERLAYS */
-        #init-screen { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; justify-content: center; align-items: center; flex-direction: column; cursor: pointer; }
-        #loader { position: fixed; inset: 0; background: #020203; z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; }
+        /* --- OVERLAYS --- */
+        #loader { position: fixed; inset: 0; background: #020203; z-index: 10000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
         #finale-overlay { position: fixed; inset: 0; background: black; z-index: 9998; display: none; justify-content: center; align-items: center; flex-direction: column; opacity: 0; }
+        
+        /* Audio Hint Toast */
+        #audio-hint {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); border: 1px solid #333; color: #666;
+            font-size: 10px; font-family: monospace; padding: 8px 12px;
+            border-radius: 20px; pointer-events: none; opacity: 0; transition: opacity 1s;
+            z-index: 50;
+        }
 
         ::-webkit-scrollbar { width: 0; }
     </style>
 </head>
 <body class="antialiased">
 
-    <!-- 1. INITIALIZE SCREEN -->
-    <div id="init-screen">
-        <div class="relative w-24 h-24 mb-8 group">
-            <div class="absolute inset-0 bg-brand/20 rounded-full animate-ping opacity-75"></div>
-            <div class="relative z-10 w-full h-full rounded-full border border-brand flex items-center justify-center backdrop-blur-md shadow-[0_0_40px_#ff003c]">
-                <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-            </div>
-        </div>
-        <h1 class="text-3xl font-display font-bold text-white tracking-widest mb-2">SYSTEM OFFLINE</h1>
-        <p class="text-gray-500 text-xs font-mono tracking-[0.3em] group-hover:text-brand transition-colors">CLICK TO INITIALIZE</p>
-    </div>
-
-    <!-- 2. LOADER -->
+    <!-- 1. AUTO LOADER -->
     <div id="loader">
-        <div class="font-mono text-cyan text-xs tracking-[0.3em] mb-4 animate-pulse text-cyan-glow">DECRYPTING CORE...</div>
+        <div class="font-mono text-cyan text-xs tracking-[0.3em] mb-4 animate-pulse text-cyan-glow">INITIALIZING PROTOCOL...</div>
         <div class="w-64 h-[2px] bg-gray-800 relative overflow-hidden rounded-full">
             <div id="loader-bar" class="absolute top-0 left-0 h-full bg-cyan w-0 shadow-[0_0_15px_#00f3ff]"></div>
         </div>
-        <div class="mt-4 font-mono text-[10px] text-gray-600" id="loader-log"> > Accessing Memory Banks...</div>
+        <div class="mt-4 font-mono text-[10px] text-gray-600" id="loader-log"> > Establishing Secure Connection...</div>
     </div>
 
-    <!-- 3. VISUALS -->
+    <!-- 2. AUDIO HINT (Appears briefly) -->
+    <div id="audio-hint">TAP ANYWHERE TO ENABLE AUDIO</div>
+
+    <!-- 3. BACKGROUND & VISUALS -->
     <div id="canvas-container"></div>
     <div class="vignette"></div>
     <div class="scanlines"></div>
 
-    <!-- 4. MAIN UI -->
+    <!-- 4. MAIN INTERFACE -->
     <main class="relative z-10 opacity-0" id="main-ui">
+
         <header class="fixed top-0 w-full p-8 flex justify-between items-center pointer-events-none z-50 mix-blend-screen">
             <div class="flex flex-col">
                 <span class="text-[10px] font-mono text-gray-500 tracking-widest">SUBJECT_ID</span>
@@ -123,21 +122,27 @@
             </div>
         </header>
 
+        <!-- HERO -->
         <section class="h-screen flex flex-col items-center justify-center px-4 relative perspective-1000">
             <div class="glass-panel p-12 rounded-[3rem] max-w-lg w-full text-center relative border-t border-cyan/20 tilt-card overflow-hidden group">
+                <div class="absolute top-0 -left-[100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-[-25deg] animate-[shine_3s_infinite]"></div>
                 <div class="inline-block px-3 py-1 rounded-full border border-cyan/30 bg-cyan/5 text-cyan text-[10px] font-mono tracking-[0.3em] mb-10 backdrop-blur-md">TEMPORAL LOCK</div>
                 <h1 class="text-8xl font-display font-bold text-white mb-2 tracking-tighter leading-none">
                     09:26 <span class="text-2xl text-gray-600 font-light absolute top-2 ml-2">PM</span>
                 </h1>
                 <div class="text-3xl font-body text-brand font-light tracking-wide mb-10 text-glow">Nov 20, 2025</div>
                 <div class="h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent mb-8"></div>
-                <p class="text-gray-400 text-sm font-mono leading-relaxed tracking-wide">// LOG ENTRY:<br>The exact coordinate in time where probability collapsed into certainty.</p>
+                <p class="text-gray-400 text-sm font-mono leading-relaxed tracking-wide">
+                    // LOG ENTRY:<br>The exact coordinate in time where probability collapsed into certainty.
+                </p>
             </div>
             <div class="absolute bottom-12 animate-bounce text-gray-600 text-[10px] font-mono tracking-[0.5em] uppercase">Scroll to Decrypt</div>
         </section>
 
+        <!-- EVIDENCE -->
         <section class="py-32 px-4 relative z-10">
             <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 perspective-1000">
+                <!-- Card 1 -->
                 <div class="glass-panel p-10 rounded-[2rem] relative border-l-4 border-brand tilt-card group hover:bg-white/5 transition-colors duration-500 opacity-0 translate-y-20 scroll-reveal">
                     <div class="absolute top-8 right-8 text-[10px] font-mono text-brand border border-brand/30 px-2 py-1 rounded">PHYSIOLOGY</div>
                     <h3 class="text-3xl font-display font-bold text-white mb-3 group-hover:text-brand transition-colors">Cardiac Anomaly</h3>
@@ -147,6 +152,7 @@
                         <span class="text-sm font-mono text-gray-500">BPM</span>
                     </div>
                 </div>
+                <!-- Card 2 -->
                 <div class="glass-panel p-10 rounded-[2rem] relative border-l-4 border-cyan tilt-card group hover:bg-white/5 transition-colors duration-500 mt-12 md:mt-0 opacity-0 translate-y-20 scroll-reveal">
                     <div class="absolute top-8 right-8 text-[10px] font-mono text-cyan border border-cyan/30 px-2 py-1 rounded">LATENCY</div>
                     <h3 class="text-3xl font-display font-bold text-white mb-3 group-hover:text-cyan transition-colors">Priority Index</h3>
@@ -159,6 +165,7 @@
             </div>
         </section>
 
+        <!-- RIGGED CHAT -->
         <section class="min-h-screen flex flex-col items-center justify-center px-4 py-20">
             <div class="w-full max-w-md glass-panel rounded-3xl overflow-hidden shadow-2xl tilt-card border border-white/10 opacity-0 scale-95 scroll-reveal">
                 <div class="bg-black/60 p-5 border-b border-white/5 flex justify-between items-center backdrop-blur-md">
@@ -178,6 +185,7 @@
             </div>
         </section>
 
+        <!-- FINALE -->
         <section class="h-screen flex flex-col items-center justify-center px-4 relative perspective-1000">
             <div class="glass-panel p-12 md:p-16 rounded-[3rem] max-w-md w-full text-center relative z-20 border border-white/10 tilt-card opacity-0 translate-y-20 scroll-reveal">
                 <div class="w-24 h-24 mx-auto bg-gradient-to-b from-brand to-purple-900 rounded-full flex items-center justify-center mb-8 shadow-[0_0_60px_rgba(255,0,60,0.6)] animate-float relative group">
@@ -199,51 +207,54 @@
         <div class="text-brand font-mono tracking-[0.8em] text-xs md:text-sm opacity-0 translate-y-8 transition-all duration-[2000ms] delay-700" id="finale-sub">AMIT + CHARVI // EST. 2025</div>
     </div>
 
+    <!-- LOGIC -->
     <script>
-        // 1. AUDIO SYSTEM (Pure Synthesis)
-        class AudioEngine {
-            constructor() { this.ctx = null; this.gain = null; }
+        // 1. AUDIO ENGINE (Safe Mode)
+        class AudioSys {
+            constructor() { this.ctx = null; this.master = null; this.started = false; }
             init() {
-                if (this.ctx) return;
+                if(this.started) return;
                 const AC = window.AudioContext || window.webkitAudioContext;
                 this.ctx = new AC();
-                this.gain = this.ctx.createGain();
-                this.gain.gain.value = 0.3;
-                this.gain.connect(this.ctx.destination);
+                this.master = this.ctx.createGain();
+                this.master.gain.value = 0.4;
+                this.master.connect(this.ctx.destination);
+                this.started = true;
+                // Silent startup tone to unlock mobile audio
+                this.play(0, 'sine', 0.1);
                 this.drone();
-                this.play(200, 'sine', 0.5);
             }
             drone() {
-                const o1 = this.ctx.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = 40;
-                const o2 = this.ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = 42;
-                const f = this.ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 120;
-                const g = this.ctx.createGain(); g.gain.value = 0.2;
-                o1.connect(f); o2.connect(f); f.connect(g); g.connect(this.gain);
+                const o1 = this.ctx.createOscillator(); o1.type='sawtooth'; o1.frequency.value=40;
+                const o2 = this.ctx.createOscillator(); o2.type='sine'; o2.frequency.value=42;
+                const f = this.ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=100;
+                const g = this.ctx.createGain(); g.gain.value=0.2;
+                o1.connect(f); o2.connect(f); f.connect(g); g.connect(this.master);
                 o1.start(); o2.start();
             }
-            play(freq, type, dur = 0.5) {
-                if (!this.ctx) return;
-                const o = this.ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(freq, this.ctx.currentTime);
+            play(freq, type, dur=0.5) {
+                if(!this.ctx) return;
+                const o = this.ctx.createOscillator(); o.type=type; o.frequency.setValueAtTime(freq, this.ctx.currentTime);
                 const g = this.ctx.createGain(); g.gain.setValueAtTime(0.1, this.ctx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + dur);
-                o.connect(g); g.connect(this.gain);
-                o.start(); o.stop(this.ctx.currentTime + dur);
+                g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime+dur);
+                o.connect(g); g.connect(this.master);
+                o.start(); o.stop(this.ctx.currentTime+dur);
             }
             heartbeat() {
-                if (!this.ctx) return;
-                const o = this.ctx.createOscillator(); o.frequency.setValueAtTime(60, this.ctx.currentTime); o.frequency.exponentialRampToValueAtTime(10, this.ctx.currentTime + 0.1);
-                const g = this.ctx.createGain(); g.gain.setValueAtTime(0.8, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
-                o.connect(g); g.connect(this.gain); o.start(); o.stop(this.ctx.currentTime + 0.1);
+                if(!this.ctx) return;
+                const o = this.ctx.createOscillator(); o.frequency.setValueAtTime(60, this.ctx.currentTime); o.frequency.exponentialRampToValueAtTime(10, this.ctx.currentTime+0.1);
+                const g = this.ctx.createGain(); g.gain.setValueAtTime(0.8, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime+0.1);
+                o.connect(g); g.connect(this.master); o.start(); o.stop(this.ctx.currentTime+0.1);
             }
             swell() {
-                if (!this.ctx) return;
-                const o = this.ctx.createOscillator(); o.type = 'sawtooth';
-                o.frequency.setValueAtTime(50, this.ctx.currentTime); o.frequency.linearRampToValueAtTime(800, this.ctx.currentTime + 4);
-                const g = this.ctx.createGain(); g.gain.setValueAtTime(0, this.ctx.currentTime); g.gain.linearRampToValueAtTime(0.5, this.ctx.currentTime + 3);
-                o.connect(g); g.connect(this.gain); o.start(); o.stop(this.ctx.currentTime + 6);
+                if(!this.ctx) return;
+                const o = this.ctx.createOscillator(); o.type='sawtooth';
+                o.frequency.setValueAtTime(50, this.ctx.currentTime); o.frequency.linearRampToValueAtTime(800, this.ctx.currentTime+4);
+                const g = this.ctx.createGain(); g.gain.setValueAtTime(0, this.ctx.currentTime); g.gain.linearRampToValueAtTime(0.5, this.ctx.currentTime+3); g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime+6);
+                o.connect(g); g.connect(this.master); o.start(); o.stop(this.ctx.currentTime+6);
             }
         }
-        const SFX = new AudioEngine();
+        const SFX = new AudioSys();
 
         // 2. 3D ENGINE
         const init3D = () => {
@@ -283,10 +294,9 @@
                 const now = Date.now();
                 const pulse = Math.sin(now * 0.0025);
                 const s = 0.5 + (pulse * 0.05);
-                
                 if (pulse > 0.95 && now - lastBeat > 1000) {
                     heart.scale.set(0.6, 0.6, 0.6);
-                    SFX.heartbeat();
+                    SFX.heartbeat(); // Heartbeat hook
                     lastBeat = now;
                 } else {
                     heart.scale.set(s, s, s);
@@ -298,17 +308,13 @@
             window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
         }
 
-        // 3. UI INTERACTIONS
-        const initBtn = document.getElementById('init-screen');
-        
-        const startApp = () => {
-            // Immediate feedback
-            initBtn.style.pointerEvents = 'none';
-            gsap.to(initBtn, { opacity: 0, duration: 0.5, onComplete: () => initBtn.style.display = 'none' });
-            document.getElementById('loader').style.display = 'flex';
-            
-            // Try Audio (with catch)
-            try { SFX.init(); } catch(e) {}
-
+        // 3. STARTUP LOGIC (AUTO-START)
+        window.onload = () => {
+            const bar = document.getElementById('loader-bar');
+            const loader = document.getElementById('loader');
+            const ui = document.getElementById('main-ui');
             const logs = document.getElementById('loader-log');
-            const msgs = ["> Decrypting...", 
+
+            // Log sequence
+            setTimeout(() => logs.innerText = "> Decrypting Memories...", 500);
+      
