@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PROTOCOL: ETERNITY // FINAL</title>
+    
+    <!-- CSS Framework -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- JS Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script> <!-- Tone.js for Pro Audio -->
+
+    <!-- Fonts -->
+    <link href="https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&f[]=satoshi@300,400,500,700&f[]=share-tech-mono@400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Clash Display', 'sans-serif'],
+                        body: ['Satoshi', 'sans-serif'],
+                        mono: ['Share Tech Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: '#ff003c',
+                        cyan: '#00f3ff',
+                        void: '#020203',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #020203;
+            color: #ffffff;
+            overflow-x: hidden;
+            margin: 0;
+            cursor: crosshair;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* --- CINEMATIC LAYERS --- */
+        #canvas-container {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 0; pointer-events: none;
+            filter: contrast(1.1) brightness(1.1);
+        }
+
+        .scanline {
+            position: fixed; inset: 0; pointer-events: none; z-index: 50;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+            opacity: 0.3;
+        }
+
+        .vignette {
+            position: fixed; inset: 0; pointer-events: none; z-index: 40;
+            background: radial-gradient(circle, transparent 60%, black 100%);
+        }
+
+        /* --- UI ELEMENTS --- */
+        .glass-panel {
+            background: rgba(10, 12, 16, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.6);
+            transform: translateZ(0);
+            transition: border-color 0.3s, transform 0.3s;
+        }
+        .glass-panel:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 50px -10px rgba(255, 0, 60, 0.15);
+        }
+
+        /* --- TEXT EFFECTS --- */
+        .chromatic-text {
+            position: relative;
+            color: white;
+        }
+        .chromatic-text::before, .chromatic-text::after {
+            content: attr(data-text);
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.7;
+        }
+        .chromatic-text::before {
+            color: #00f3ff; z-index: -1; transform: translate(-2px, 0);
+            mix-blend-mode: screen;
+        }
+        .chromatic-text::after {
+            color: #ff003c; z-index: -2; transform: translate(2px, 0);
+            mix-blend-mode: screen;
+        }
+
+        /* --- RIGGED INPUT --- */
+        #rigged-input {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #00f3ff;
+            transition: all 0.2s ease;
+        }
+        #rigged-input:focus {
+            outline: none;
+            border-color: #ff003c;
+            box-shadow: 0 0 20px rgba(255, 0, 60, 0.3);
+        }
+
+        /* --- OVERLAYS --- */
+        #start-screen {
+            position: fixed; inset: 0; background: #000; z-index: 10001;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            cursor: pointer;
+        }
+        
+        #loader {
+            position: fixed; inset: 0; background: #020203; z-index: 10000;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+        }
+
+        #finale-overlay {
+            position: fixed; inset: 0; background: black; z-index: 9999;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0;
+        }
+
+        ::-webkit-scrollbar { width: 0; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- 1. INITIALIZE SCREEN (REQUIRED FOR AUDIO) -->
+    <div id="start-screen">
+        <div class="relative w-24 h-24 mb-8 flex items-center justify-center group">
+            <div class="absolute inset-0 bg-brand/20 rounded-full animate-ping"></div>
+            <div class="relative z-10 w-20 h-20 rounded-full border border-brand flex items-center justify-center shadow-[0_0_30px_#ff003c]">
+                <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+        </div>
+        <h1 class="text-3xl font-display font-bold text-white tracking-wider mb-2">SYSTEM OFFLINE</h1>
+        <p class="text-gray-500 text-xs font-mono tracking-[0.2em] group-hover:text-brand transition-colors">CLICK TO INITIALIZE PROTOCOL</p>
+    </div>
+
+    <!-- 2. LOADER -->
+    <div id="loader">
+        <div class="font-mono text-cyan text-xs tracking-[0.3em] mb-4 animate-pulse">CALIBRATING AUDIO CORE...</div>
+        <div class="w-64 h-[1px] bg-gray-800 relative overflow-hidden">
+            <div id="loader-bar" class="absolute top-0 left-0 h-full bg-cyan w-0 shadow-[0_0_15px_#00f3ff]"></div>
+        </div>
+    </div>
+
+    <!-- 3. BACKGROUND LAYERS -->
+    <div id="canvas-container"></div>
+    <div class="scanline"></div>
+    <div class="vignette"></div>
+
+    <!-- 4. MAIN UI -->
+    <main class="relative z-20 opacity-0" id="main-content">
+
+        <header class="fixed top-0 w-full p-8 flex justify-between items-center mix-blend-screen pointer-events-none z-50">
+            <div class="text-[10px] font-mono text-gray-500 tracking-widest">ID: CHARVI</div>
+            <div class="flex items-center gap-3">
+                <div class="w-1.5 h-1.5 bg-brand rounded-full animate-pulse shadow-[0_0_10px_#ff003c]"></div>
+                <span class="text-[10px] font-mono text-brand tracking-widest">SYNCED: 2025.11.20</span>
+            </div>
+        </header>
+
+        <!-- SECTION: TEMPORAL LOCK -->
+        <section class="h-screen flex flex-col items-center justify-center px-4 relative">
+            <div class="glass-panel p-12 rounded-[2rem] max-w-lg w-full text-center relative overflow-hidden border-t border-cyan/30">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan to-transparent opacity-50"></div>
+                
+                <div class="text-cyan text-[10px] font-mono tracking-[0.4em] mb-10 opacity-80">TEMPORAL LOCK</div>
+                
+                <h1 class="text-8xl font-display font-bold text-white mb-4 tracking-tighter leading-none chromatic-text" data-text="09:26">
+                    09:26
+                </h1>
+                <div class="text-2xl font-body text-brand font-light tracking-wide mb-10 text-shadow-neon">Nov 20, 2025</div>
+                
+                <div class="h-px w-full bg-white/5 mb-8"></div>
+                
+                <p class="text-gray-400 text-xs font-mono leading-relaxed tracking-wide">
+                    The exact coordinate in time where my universe aligned with yours.<br>
+                    <span class="text-brand">Status: Permanent.</span>
+                </p>
+            </div>
+            <div class="absolute bottom-12 animate-bounce text-gray-600 text-[10px] font-mono tracking-widest">SCROLL TO DECRYPT</div>
+        </section>
+
+        <!-- SECTION: EVIDENCE -->
+        <section class="py-32 px-4">
+            <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- CARD 1 -->
+                <div class="glass-panel p-10 rounded-3xl relative border-l-2 border-brand group transition-transform hover:scale-[1.02]">
+                    <div class="absolute top-6 right-6 text-[10px] font-mono text-brand opacity-50">PHYSIOLOGY</div>
+                    <div class="mb-6 p-4 bg-brand/10 w-fit rounded-xl text-brand border border-brand/20">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                    </div>
+                    <h3 class="text-3xl font-display font-bold text-white mb-2 group-hover:text-brand transition-colors">The Heart Spike</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-6">Bio-metric reading at 9:26 PM.</p>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-6xl font-display font-bold text-brand text-glow">142</span>
+                        <span class="text-sm font-mono text-gray-500">BPM</span>
+                    </div>
+                </div>
+
+                <!-- CARD 2 -->
+                <div class="glass-panel p-10 rounded-3xl relative border-l-2 border-cyan mt-12 md:mt-0 group transition-transform hover:scale-[1.02]">
+                    <div class="absolute top-6 right-6 text-[10px] font-mono text-cyan opacity-50">LATENCY</div>
+                    <div class="mb-6 p-4 bg-cyan/10 w-fit rounded-xl text-cyan border border-cyan/20">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <h3 class="text-3xl font-display font-bold text-white mb-2 group-hover:text-cyan transition-colors">Priority Level</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-6">Response time analysis.</p>
+                    <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden mb-2">
+                        <div class="h-full bg-cyan w-[99%] shadow-[0_0_15px_#00f3ff]"></div>
+                    </div>
+                    <div class="flex justify-between text-[10px] font-mono text-cyan">
+                        <span>CHARVI: INSTANT</span>
+                        <span>OTHERS: IGNORED</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: RIGGED CHAT -->
+        <section class="min-h-screen flex flex-col items-center justify-center px-4">
+            <div class="w-full max-w-md glass-panel rounded-3xl overflow-hidden border border-gray-800">
+                <div class="bg-black/40 p-5 border-b border-white/5 flex justify-between items-center">
+                    <span class="text-[10px] font-mono text-gray-500 tracking-wider">ENCRYPTED_CHANNEL</span>
+                    <div class="flex gap-1.5"><div class="w-2 h-2 rounded-full bg-red-500"></div><div class="w-2 h-2 rounded-full bg-yellow-500"></div></div>
+                </div>
+                <div class="p-6 space-y-5 h-72 bg-black/20 overflow-y-auto">
+                    <div class="flex gap-4"><div class="bg-cyan/10 text-cyan p-4 rounded-2xl rounded-tl-none text-xs font-mono border border-cyan/20 max-w-[85%] leading-relaxed shadow-[0_0_15px_rgba(0,243,255,0.1)]">Analysis complete. My love is infinite.</div></div>
+                    <div class="flex gap-4 flex-row-reverse"><div class="bg-brand/10 text-brand p-4 rounded-2xl rounded-tr-none text-xs font-mono border border-brand/20 max-w-[85%] leading-relaxed shadow-[0_0_15px_rgba(255,0,60,0.1)]">No way! I love you way more.</div></div>
+                    <div class="flex gap-4"><div class="bg-cyan/10 text-cyan p-4 rounded-2xl rounded-tl-none text-xs font-mono border border-cyan/20 max-w-[85%] leading-relaxed">Incorrect. Try to type it. The system forbids lies.</div></div>
+                </div>
+                <div class="p-6 bg-black/40 border-t border-white/5 relative">
+                    <label class="text-[10px] text-gray-500 font-mono mb-2 block tracking-wider">OVERRIDE ATTEMPT:</label>
+                    <input type="text" id="rigged-input" placeholder="Type 'I love you more'..." class="w-full p-4 rounded-xl text-white text-sm font-mono placeholder-gray-600" autocomplete="off">
+                    <div id="input-error" class="absolute bottom-3 right-7 text-[10px] text-brand font-mono opacity-0 transition-opacity tracking-wide">⚠ REWRITTEN BY TRUTH PROTOCOL</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: FINALE -->
+        <section class="h-screen flex flex-col items-center justify-center px-4 relative">
+            <div class="glass-panel p-12 rounded-[2.5rem] max-w-sm w-full text-center relative z-20 border border-white/10">
+                <div class="w-24 h-24 mx-auto bg-gradient-to-b from-brand to-purple-900 rounded-full flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(255,0,60,0.4)] animate-float">
+                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <h2 class="text-4xl font-display font-bold text-white mb-3">Accept Truth</h2>
+                <p class="text-gray-400 text-sm mb-12 font-body leading-relaxed">Confirm that Amit loves you more than scientifically possible.</p>
+                <div class="relative h-16 w-full group">
+                    <button id="deny-btn" class="absolute inset-0 w-full h-full bg-gray-900 border border-white/10 text-gray-500 rounded-xl text-xs font-mono uppercase tracking-[0.2em] z-20 transition-all">DENY</button>
+                    <button id="accept-btn" class="absolute inset-0 w-full h-full bg-brand text-white rounded-xl font-bold tracking-[0.3em] shadow-[0_0_30px_rgba(255,0,60,0.5)] z-10 opacity-0 pointer-events-none transition-all duration-500 transform scale-90">I ACCEPT</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- FINALE OVERLAY -->
+    <div id="finale-overlay">
+        <h1 class="text-7xl md:text-9xl font-display font-bold text-white mb-4 scale-50 opacity-0 blur-sm transition-all duration-1000 ease-out text-glow chromatic-text" data-text="FOREVER." id="finale-text">FOREVER.</h1>
+        <div class="text-brand font-mono tracking-[0.5em] text-xs opacity-0 translate-y-4 transition-all duration-1000 delay-500" id="finale-sub">AMIT + CHARVI</div>
+    </div>
+
+    <script>
+        // =================================================================
+        // 1. CINEMATIC AUDIO ENGINE (USING TONE.JS CONCEPTS VIA NATIVE API)
+        // =================================================================
+        class CinematicAudio {
+            constructor() {
+                this.ctx = null;
+                this.master = null;
+                this.droneNodes = [];
+                this.isMuted = false;
+            }
+
+            init() {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+                this.master = this.ctx.createGain();
+                this.master.gain.value = 0.4; // Master volume
+                this.master.connect(this.ctx.destination);
+                
+                this.startDrone();
+                this.playBoot();
+            }
+
+            // THE DRONE: Creates a deep, sci-fi space rumble
+            startDrone() {
+                // Oscillator 1: Deep Sawtooth
+                const osc1 = this.ctx.createOscillator();
+                osc1.type = 'sawtooth';
+                osc1.frequency.value = 50; 
+                
+                // Oscillator 2: Detuned Sine for throbbing effect
+                const osc2 = this.ctx.createOscillator();
+                osc2.type = 'sine';
+                osc2.frequency.value = 51; // Slight detune creates "beating"
+
+                // Filter: Remove harsh high freq
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 120;
+
+                const droneGain = this.ctx.createGain();
+                droneGain.gain.value = 0.3;
+
+                osc1.connect(filter);
+                osc2.connect(filter);
+                filter.connect(droneGain);
+                droneGain.connect(this.master);
+
+                osc1.start();
+                osc2.start();
+                this.droneNodes.push(osc1, osc2);
+            }
+
+            // SFX: High-Tech Boot Up
+            playBoot() {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.frequency.setValueAtTime(100, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.5);
+                
+                gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
+                
+                osc.connect(gain);
+                gain.connect(this.master);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.5);
+            }
+
+            // SFX: Sub-Bass Heartbeat
+            triggerHeartbeat() {
+                if(!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.frequency.setValueAtTime(60, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.1);
+                
+                gain.gain.setValueAtTime(0.8, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+                
+                osc.connect(gain);
+                gain.connect(this.master);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.3);
+            }
+
+            // SFX: Glassy UI Click
+            playClick() {
+                if(!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1200, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.1);
+                
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+                
+                osc.connect(gain);
+                gain.connect(this.master);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.1);
+            }
+
+            // SFX: Typing/Glitch
+            playType() {
+                if(!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.type = 'square';
+                osc.frequency.value = 800 + Math.random() * 500;
+                
+                gain.gain.setValueAtTime(0.05, this.ctx.currentTime
