@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PROTOCOL: ETERNITY</title>
     
-    <!-- Core Libraries -->
+    <!-- CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- JS Libs (Loaded Async for speed) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -46,12 +48,12 @@
             user-select: none;
         }
 
-        /* --- LAYERS --- */
+        /* LAYERS */
         #canvas-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
         .vignette { position: fixed; inset: 0; background: radial-gradient(circle at center, transparent 0%, #020203 140%); pointer-events: none; z-index: 1; }
         .scanlines { position: fixed; inset: 0; background: repeating-linear-gradient(to bottom, transparent, transparent 2px, rgba(0, 0, 0, 0.2) 2px, rgba(0, 0, 0, 0.2) 4px); pointer-events: none; z-index: 2; }
 
-        /* --- UI --- */
+        /* UI */
         .glass-panel {
             background: rgba(10, 12, 16, 0.7);
             backdrop-filter: blur(20px);
@@ -73,11 +75,10 @@
         }
         #rigged-input:focus { outline: none; border-color: #ff003c; box-shadow: 0 0 20px rgba(255, 0, 60, 0.3); }
 
-        /* --- OVERLAYS --- */
-        #loader { position: fixed; inset: 0; background: #020203; z-index: 10000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        /* OVERLAYS */
+        #loader { position: fixed; inset: 0; background: #020203; z-index: 10000; display: flex; justify-content: center; align-items: center; flex-direction: column; transition: opacity 0.5s; }
         #finale-overlay { position: fixed; inset: 0; background: black; z-index: 9998; display: none; justify-content: center; align-items: center; flex-direction: column; opacity: 0; }
         
-        /* Audio Hint Toast */
         #audio-hint {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
             background: rgba(0,0,0,0.8); border: 1px solid #333; color: #666;
@@ -100,15 +101,15 @@
         <div class="mt-4 font-mono text-[10px] text-gray-600" id="loader-log"> > Establishing Secure Connection...</div>
     </div>
 
-    <!-- 2. AUDIO HINT (Appears briefly) -->
+    <!-- 2. AUDIO HINT -->
     <div id="audio-hint">TAP ANYWHERE TO ENABLE AUDIO</div>
 
-    <!-- 3. BACKGROUND & VISUALS -->
+    <!-- 3. BACKGROUND -->
     <div id="canvas-container"></div>
     <div class="vignette"></div>
     <div class="scanlines"></div>
 
-    <!-- 4. MAIN INTERFACE -->
+    <!-- 4. MAIN UI -->
     <main class="relative z-10 opacity-0" id="main-ui">
 
         <header class="fixed top-0 w-full p-8 flex justify-between items-center pointer-events-none z-50 mix-blend-screen">
@@ -142,7 +143,6 @@
         <!-- EVIDENCE -->
         <section class="py-32 px-4 relative z-10">
             <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 perspective-1000">
-                <!-- Card 1 -->
                 <div class="glass-panel p-10 rounded-[2rem] relative border-l-4 border-brand tilt-card group hover:bg-white/5 transition-colors duration-500 opacity-0 translate-y-20 scroll-reveal">
                     <div class="absolute top-8 right-8 text-[10px] font-mono text-brand border border-brand/30 px-2 py-1 rounded">PHYSIOLOGY</div>
                     <h3 class="text-3xl font-display font-bold text-white mb-3 group-hover:text-brand transition-colors">Cardiac Anomaly</h3>
@@ -152,7 +152,6 @@
                         <span class="text-sm font-mono text-gray-500">BPM</span>
                     </div>
                 </div>
-                <!-- Card 2 -->
                 <div class="glass-panel p-10 rounded-[2rem] relative border-l-4 border-cyan tilt-card group hover:bg-white/5 transition-colors duration-500 mt-12 md:mt-0 opacity-0 translate-y-20 scroll-reveal">
                     <div class="absolute top-8 right-8 text-[10px] font-mono text-cyan border border-cyan/30 px-2 py-1 rounded">LATENCY</div>
                     <h3 class="text-3xl font-display font-bold text-white mb-3 group-hover:text-cyan transition-colors">Priority Index</h3>
@@ -165,7 +164,7 @@
             </div>
         </section>
 
-        <!-- RIGGED CHAT -->
+        <!-- CHAT -->
         <section class="min-h-screen flex flex-col items-center justify-center px-4 py-20">
             <div class="w-full max-w-md glass-panel rounded-3xl overflow-hidden shadow-2xl tilt-card border border-white/10 opacity-0 scale-95 scroll-reveal">
                 <div class="bg-black/60 p-5 border-b border-white/5 flex justify-between items-center backdrop-blur-md">
@@ -207,9 +206,8 @@
         <div class="text-brand font-mono tracking-[0.8em] text-xs md:text-sm opacity-0 translate-y-8 transition-all duration-[2000ms] delay-700" id="finale-sub">AMIT + CHARVI // EST. 2025</div>
     </div>
 
-    <!-- LOGIC -->
     <script>
-        // 1. AUDIO ENGINE (Safe Mode)
+        // --- AUDIO ENGINE (Safe Mode) ---
         class AudioSys {
             constructor() { this.ctx = null; this.master = null; this.started = false; }
             init() {
@@ -220,8 +218,7 @@
                 this.master.gain.value = 0.4;
                 this.master.connect(this.ctx.destination);
                 this.started = true;
-                // Silent startup tone to unlock mobile audio
-                this.play(0, 'sine', 0.1);
+                this.play(0, 'sine', 0.1); // Unlocks mobile audio
                 this.drone();
             }
             drone() {
@@ -256,7 +253,7 @@
         }
         const SFX = new AudioSys();
 
-        // 2. 3D ENGINE
+        // --- 3D ENGINE ---
         const init3D = () => {
             const container = document.getElementById('canvas-container');
             const scene = new THREE.Scene();
@@ -296,7 +293,7 @@
                 const s = 0.5 + (pulse * 0.05);
                 if (pulse > 0.95 && now - lastBeat > 1000) {
                     heart.scale.set(0.6, 0.6, 0.6);
-                    SFX.heartbeat(); // Heartbeat hook
+                    SFX.heartbeat(); // Hook audio to visual beat
                     lastBeat = now;
                 } else {
                     heart.scale.set(s, s, s);
@@ -308,13 +305,17 @@
             window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
         }
 
-        // 3. STARTUP LOGIC (AUTO-START)
-        window.onload = () => {
-            const bar = document.getElementById('loader-bar');
-            const loader = document.getElementById('loader');
-            const ui = document.getElementById('main-ui');
+        // --- APP LOGIC ---
+        
+        // 1. START SEQUENCE (FAILSAFE)
+        let loaded = false;
+        const startSequence = () => {
+            if(loaded) return;
+            loaded = true;
+            
             const logs = document.getElementById('loader-log');
-
-            // Log sequence
             setTimeout(() => logs.innerText = "> Decrypting Memories...", 500);
-      
+            setTimeout(() => logs.innerText = "> Target: CHARVI found.", 1500);
+
+            gsap.to('#loader-bar', { width: '100%', duration: 3, ease: 'power2.inOut', onComplete: () => {
+                gsap
