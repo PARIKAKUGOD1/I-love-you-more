@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PROTOCOL: ETERNITY // FINAL_CUT</title>
+    <title>PROTOCOL: ETERNITY</title>
     
-    <!-- 1. FRAMEWORKS & ENGINES -->
+    <!-- 1. FRAMEWORKS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    <!-- 2. TYPOGRAPHY SYSTEM -->
+    <!-- 2. FONTS -->
     <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=satoshi@300,400,500,700,900&f[]=share-tech-mono@400&display=swap" rel="stylesheet">
 
-    <!-- 3. THEME CONFIGURATION -->
+    <!-- 3. CONFIG -->
     <script>
         tailwind.config = {
             theme: {
@@ -30,51 +30,23 @@
                         void: '#020203',
                     },
                     animation: {
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'spin-slow': 'spin 10s linear infinite',
                     }
                 }
             }
         }
     </script>
 
-    <!-- 4. CINEMATIC STYLES -->
+    <!-- 4. STYLES -->
     <style>
-        body {
-            background-color: #020203;
-            color: #ffffff;
-            overflow-x: hidden;
-            margin: 0;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-        }
+        body { background-color: #020203; color: white; overflow-x: hidden; margin: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
+        
+        /* LAYERS */
+        #canvas-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
+        .vignette { position: fixed; inset: 0; background: radial-gradient(circle at center, transparent 0%, #020203 140%); pointer-events: none; z-index: 1; }
+        .scanlines { position: fixed; inset: 0; background: repeating-linear-gradient(to bottom, transparent, transparent 2px, rgba(0,0,0,0.2) 2px, rgba(0,0,0,0.2) 4px); pointer-events: none; z-index: 2; }
 
-        /* --- RENDER LAYERS --- */
-        #canvas-container {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            z-index: 0; /* Base Layer */
-            pointer-events: none;
-        }
-
-        .vignette {
-            position: fixed; inset: 0;
-            background: radial-gradient(circle at center, transparent 0%, #020203 140%);
-            pointer-events: none; z-index: 1;
-        }
-
-        .scanlines {
-            position: fixed; inset: 0;
-            background: repeating-linear-gradient(
-                to bottom,
-                transparent,
-                transparent 2px,
-                rgba(0, 0, 0, 0.2) 2px,
-                rgba(0, 0, 0, 0.2) 4px
-            );
-            pointer-events: none; z-index: 2;
-        }
-
-        /* --- GLASS UI --- */
+        /* UI ELEMENTS */
         .glass-panel {
             background: rgba(10, 12, 16, 0.7);
             backdrop-filter: blur(20px);
@@ -84,52 +56,40 @@
             transform-style: preserve-3d;
             will-change: transform;
         }
-
+        
         .text-glow { text-shadow: 0 0 20px rgba(255, 0, 60, 0.6); }
         
-        /* --- INPUT --- */
-        #rigged-input {
-            background: rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: #00f3ff;
-            transition: all 0.2s;
-        }
-        #rigged-input:focus {
-            outline: none;
-            border-color: #ff003c;
-            box-shadow: 0 0 20px rgba(255, 0, 60, 0.3);
-        }
+        #rigged-input { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #00f3ff; transition: all 0.2s; }
+        #rigged-input:focus { outline: none; border-color: #ff003c; }
 
-        /* --- LOADER (CSS FAILSAFE) --- */
+        /* ANIMATIONS */
+        .reveal-up { opacity: 0; transform: translateY(30px); transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reveal-up.active { opacity: 1; transform: translateY(0); }
+
+        /* LOADER */
         #loader {
             position: fixed; inset: 0; background: #020203; z-index: 10000;
             display: flex; justify-content: center; align-items: center; flex-direction: column;
-            transition: opacity 0.8s ease-out;
+            transition: opacity 0.5s ease-out;
         }
-        
-        /* Force hide after 3.5s purely via CSS in case JS hangs */
-        @keyframes autoHide { to { opacity: 0; visibility: hidden; } }
-        #loader.auto-fade { animation: autoHide 0.5s linear 3.5s forwards; }
-
         @keyframes loadBar { 0% { width: 0%; } 100% { width: 100%; } }
         #loader-bar {
             height: 100%; background-color: #00f3ff; box-shadow: 0 0 15px #00f3ff;
             width: 0%; animation: loadBar 3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
 
-        /* --- FINALE LAYERS --- */
-        #finale-overlay {
-            position: fixed; inset: 0; background: black; z-index: 9998;
-            display: none; justify-content: center; align-items: center; flex-direction: column;
-            opacity: 0; transition: opacity 2s ease-in;
+        /* FINALE OVERLAY - Hidden initially, fades in LATER */
+        #finale-overlay { 
+            position: fixed; inset: 0; background: black; z-index: 9998; 
+            display: none; justify-content: center; align-items: center; 
+            flex-direction: column; opacity: 0; pointer-events: none;
         }
         
         #audio-hint {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
             background: rgba(0,0,0,0.8); border: 1px solid #333; color: #666;
             font-size: 10px; font-family: monospace; padding: 8px 16px;
-            border-radius: 20px; pointer-events: none; opacity: 0; transition: opacity 1s;
-            z-index: 50; letter-spacing: 2px;
+            border-radius: 20px; pointer-events: none; opacity: 0; transition: opacity 1s; z-index: 50;
         }
 
         ::-webkit-scrollbar { width: 0; }
@@ -137,223 +97,151 @@
 </head>
 <body class="antialiased">
 
-    <!-- 1. FAILSAFE LOADER -->
-    <div id="loader" class="auto-fade">
+    <!-- LOADER -->
+    <div id="loader">
         <div class="font-mono text-cyan text-xs tracking-[0.3em] mb-4 animate-pulse text-cyan-glow">INITIALIZING PROTOCOL...</div>
         <div class="w-64 h-[2px] bg-gray-800 relative overflow-hidden rounded-full">
             <div id="loader-bar"></div>
         </div>
-        <div class="mt-4 font-mono text-[10px] text-gray-600" id="loader-logs"> > Establishing Secure Connection...</div>
+        <div class="mt-4 font-mono text-[10px] text-gray-600" id="loader-logs"> > Decrypting Core...</div>
     </div>
 
-    <!-- 2. AUDIO HINT -->
+    <!-- HINT -->
     <div id="audio-hint">TAP SCREEN TO ENABLE AUDIO</div>
 
-    <!-- 3. BACKGROUND VISUALS -->
+    <!-- VISUALS -->
     <div id="canvas-container"></div>
     <div class="vignette"></div>
     <div class="scanlines"></div>
 
-    <!-- 4. MAIN INTERFACE -->
+    <!-- MAIN UI -->
     <main class="relative z-10 opacity-0 transition-opacity duration-1000" id="main-ui">
-
         <header class="fixed top-0 w-full p-8 flex justify-between items-center pointer-events-none z-50 mix-blend-screen">
-            <div class="flex flex-col">
-                <span class="text-[10px] font-mono text-gray-500 tracking-widest">SUBJECT_ID</span>
-                <span class="text-xs font-bold text-white tracking-widest">CHARVI</span>
-            </div>
-            <div class="flex items-center gap-3">
-                <div class="text-[10px] font-mono text-brand tracking-widest">SYNC: 2025.11.20</div>
-                <div class="w-1.5 h-1.5 bg-brand rounded-full animate-pulse shadow-[0_0_10px_#ff003c]"></div>
-            </div>
+            <div class="flex flex-col"><span class="text-[10px] font-mono text-gray-500 tracking-widest">SUBJECT_ID</span><span class="text-xs font-bold text-white tracking-widest">CHARVI</span></div>
+            <div class="flex items-center gap-3"><div class="text-[10px] font-mono text-brand tracking-widest">SYNC: 2025.11.20</div><div class="w-1.5 h-1.5 bg-brand rounded-full animate-pulse shadow-[0_0_10px_#ff003c]"></div></div>
         </header>
 
         <!-- HERO -->
         <section class="h-screen flex flex-col items-center justify-center px-4 relative perspective-1000">
-            <div class="glass-panel p-12 rounded-[3rem] max-w-lg w-full text-center relative border-t border-cyan/20 tilt-card overflow-hidden group reveal-up" style="transition-delay: 0.1s;">
+            <div class="glass-panel p-12 rounded-[3rem] max-w-lg w-full text-center relative border-t border-cyan/20 tilt-card overflow-hidden group reveal-up">
                 <div class="absolute top-0 -left-[100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-[-25deg] animate-[shine_3s_infinite]"></div>
-                
                 <div class="inline-block px-3 py-1 rounded-full border border-cyan/30 bg-cyan/5 text-cyan text-[10px] font-mono tracking-[0.3em] mb-10 backdrop-blur-md">TEMPORAL LOCK</div>
-                
                 <h1 class="text-8xl font-display font-bold text-white mb-2 tracking-tighter leading-none">
                     09:26 <span class="text-2xl text-gray-600 font-light absolute top-2 ml-2">PM</span>
                 </h1>
-                
                 <div class="text-3xl font-body text-brand font-light tracking-wide mb-10 text-glow">Nov 20, 2025</div>
-                
                 <div class="h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent mb-8"></div>
-                
-                <p class="text-gray-400 text-sm font-mono leading-relaxed tracking-wide">
-                    // LOG ENTRY:<br>The exact coordinate in time where probability collapsed into certainty.
-                </p>
+                <p class="text-gray-400 text-sm font-mono leading-relaxed tracking-wide">// LOG ENTRY:<br>The exact coordinate in time where probability collapsed into certainty.</p>
             </div>
-            <div class="absolute bottom-12 animate-bounce text-gray-600 text-[10px] font-mono tracking-[0.5em] uppercase reveal-up" style="transition-delay: 0.5s;">Scroll to Decrypt</div>
+            <div class="absolute bottom-12 animate-bounce text-gray-600 text-[10px] font-mono tracking-[0.5em] uppercase reveal-up">Scroll to Decrypt</div>
         </section>
 
         <!-- EVIDENCE -->
         <section class="py-32 px-4 relative z-10">
             <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 perspective-1000">
-                
-                <!-- Card 1 -->
-                <div class="glass-panel p-10 rounded-[2rem] relative border-l-4 border-brand tilt-card group hover:bg-white/5 transition-colors duration-500 scroll-reveal opacity-0 translate-y-10">
+                <div class="glass-panel p-10 rounded-[2rem] relative border-l-4 border-brand tilt-card gs-reveal opacity-0 translate-y-10">
                     <div class="absolute top-8 right-8 text-[10px] font-mono text-brand border border-brand/30 px-2 py-1 rounded">PHYSIOLOGY</div>
-                    <h3 class="text-3xl font-display font-bold text-white mb-3 group-hover:text-brand transition-colors">Cardiac Anomaly</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed mb-8 font-mono border-l-2 border-white/10 pl-4">
-                        > ANALYSIS: Heart rate spiked significantly at 9:26 PM.<br>
-                        > CONCLUSION: Fatal levels of love detected.
-                    </p>
+                    <h3 class="text-3xl font-display font-bold text-white mb-3">Cardiac Anomaly</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-8 font-mono border-l-2 border-white/10 pl-4">> ANALYSIS: Heart rate spiked at 9:26 PM.<br>> CONCLUSION: Fatal levels of love detected.</p>
                     <div class="flex items-baseline gap-3">
                         <span class="text-7xl font-display font-bold text-brand text-glow tabular-nums" id="bpm-counter">0</span>
                         <span class="text-sm font-mono text-gray-500">BPM</span>
                     </div>
                 </div>
-
-                <!-- Card 2 -->
-                <div class="glass-panel p-10 rounded-[2rem] relative border-l-4 border-cyan tilt-card group hover:bg-white/5 transition-colors duration-500 mt-12 md:mt-0 scroll-reveal opacity-0 translate-y-10">
+                <div class="glass-panel p-10 rounded-[2rem] relative border-l-4 border-cyan tilt-card mt-12 md:mt-0 gs-reveal opacity-0 translate-y-10">
                     <div class="absolute top-8 right-8 text-[10px] font-mono text-cyan border border-cyan/30 px-2 py-1 rounded">LATENCY</div>
-                    <h3 class="text-3xl font-display font-bold text-white mb-3 group-hover:text-cyan transition-colors">Priority Index</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed mb-8 font-mono border-l-2 border-white/10 pl-4">
-                        > ANALYSIS: Response time to subject "Charvi" is instantaneous.<br>
-                        > STATUS: Obsessed.
-                    </p>
+                    <h3 class="text-3xl font-display font-bold text-white mb-3">Priority Index</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-8 font-mono border-l-2 border-white/10 pl-4">> ANALYSIS: Response time to subject "Charvi" is instantaneous.<br>> STATUS: Obsessed.</p>
                     <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden mb-4">
                         <div class="h-full bg-cyan w-[99.9%] shadow-[0_0_20px_#00f3ff] animate-pulse"></div>
                     </div>
-                    <div class="flex justify-between text-[10px] font-mono text-cyan">
-                        <span>LATENCY: 0.00s</span>
-                        <span>PRIORITY: MAX</span>
-                    </div>
+                    <div class="flex justify-between text-[10px] font-mono text-cyan"><span>LATENCY: 0.00s</span><span>PRIORITY: MAX</span></div>
                 </div>
-
             </div>
         </section>
 
-        <!-- RIGGED CHAT -->
+        <!-- CHAT -->
         <section class="min-h-screen flex flex-col items-center justify-center px-4 py-20">
-            <div class="w-full max-w-md glass-panel rounded-3xl overflow-hidden shadow-2xl tilt-card border border-white/10 scroll-reveal opacity-0 scale-95">
+            <div class="w-full max-w-md glass-panel rounded-3xl overflow-hidden shadow-2xl tilt-card border border-white/10 gs-reveal opacity-0 scale-95">
                 <div class="bg-black/60 p-5 border-b border-white/5 flex justify-between items-center backdrop-blur-md">
                     <span class="text-[10px] font-mono text-gray-400 tracking-wider">ENCRYPTED_CHANNEL</span>
                     <div class="flex gap-1.5"><div class="w-2 h-2 rounded-full bg-red-500"></div><div class="w-2 h-2 rounded-full bg-yellow-500"></div></div>
                 </div>
                 <div class="p-6 space-y-6 h-72 bg-black/20 overflow-y-auto" id="chat-history">
-                    <div class="flex gap-4">
-                        <div class="bg-cyan/10 text-cyan p-4 rounded-2xl rounded-tl-none text-xs font-mono border border-cyan/20 max-w-[85%] shadow-[0_0_10px_rgba(0,243,255,0.1)]">
-                            Calculation complete. My love > Your love. Margin of error: 0%.
-                        </div>
-                    </div>
-                    <div class="flex gap-4 flex-row-reverse">
-                        <div class="bg-brand/10 text-brand p-4 rounded-2xl rounded-tr-none text-xs font-mono border border-brand/20 max-w-[85%] shadow-[0_0_10px_rgba(255,0,60,0.1)]">
-                            No way! I love you way more.
-                        </div>
-                    </div>
-                    <div class="flex gap-4">
-                        <div class="bg-cyan/10 text-cyan p-4 rounded-2xl rounded-tl-none text-xs font-mono border border-cyan/20 max-w-[85%]">
-                            Incorrect statement. The system forbids lies. Try to type it.
-                        </div>
-                    </div>
+                    <div class="flex gap-4"><div class="bg-cyan/10 text-cyan p-4 rounded-2xl rounded-tl-none text-xs font-mono border border-cyan/20 max-w-[85%] shadow-[0_0_10px_rgba(0,243,255,0.1)]">Calculation complete. My love > Your love. Margin of error: 0%.</div></div>
+                    <div class="flex gap-4 flex-row-reverse"><div class="bg-brand/10 text-brand p-4 rounded-2xl rounded-tr-none text-xs font-mono border border-brand/20 max-w-[85%] shadow-[0_0_10px_rgba(255,0,60,0.1)]">No way! I love you way more.</div></div>
+                    <div class="flex gap-4"><div class="bg-cyan/10 text-cyan p-4 rounded-2xl rounded-tl-none text-xs font-mono border border-cyan/20 max-w-[85%]">Incorrect statement. The system forbids lies. Try to type it.</div></div>
                 </div>
                 <div class="p-6 bg-black/60 border-t border-white/5 relative">
                     <label class="text-[10px] text-gray-500 font-mono mb-2 block tracking-wider">OVERRIDE ATTEMPT:</label>
                     <input type="text" id="rigged-input" placeholder="Type 'I love you more'..." class="w-full p-4 rounded-xl text-white text-sm font-mono placeholder-gray-600" autocomplete="off">
-                    <div id="input-error" class="absolute bottom-3 right-7 text-[10px] text-brand font-mono opacity-0 transition-opacity tracking-wide font-bold">
-                        ⚠ REWRITTEN BY TRUTH PROTOCOL
-                    </div>
+                    <div id="input-error" class="absolute bottom-3 right-7 text-[10px] text-brand font-mono opacity-0 transition-opacity tracking-wide font-bold">⚠ REWRITTEN BY TRUTH PROTOCOL</div>
                 </div>
             </div>
         </section>
 
-        <!-- FINALE CONTRACT -->
+        <!-- FINALE -->
         <section class="h-screen flex flex-col items-center justify-center px-4 relative perspective-1000">
-            <div class="glass-panel p-12 md:p-16 rounded-[3rem] max-w-md w-full text-center relative z-20 border border-white/10 tilt-card scroll-reveal opacity-0 translate-y-10">
+            <div class="glass-panel p-12 md:p-16 rounded-[3rem] max-w-md w-full text-center relative z-20 border border-white/10 tilt-card gs-reveal opacity-0 translate-y-10">
                 <div class="w-24 h-24 mx-auto bg-gradient-to-b from-brand to-purple-900 rounded-full flex items-center justify-center mb-8 shadow-[0_0_60px_rgba(255,0,60,0.6)] relative group">
                      <div class="absolute inset-0 bg-brand rounded-full animate-ping opacity-20"></div>
                     <svg class="w-10 h-10 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
-                
                 <h2 class="text-4xl font-display font-bold text-white mb-4">Accept Truth</h2>
-                <p class="text-gray-400 text-sm mb-12 font-body leading-relaxed">
-                    By clicking below, you acknowledge that Amit's love is the singular universal constant of this timeline.
-                </p>
-
+                <p class="text-gray-400 text-sm mb-12 font-body leading-relaxed">By clicking below, you acknowledge that Amit's love is the singular universal constant of this timeline.</p>
                 <div class="relative h-16 w-full group">
-                    <!-- Deny Button -->
-                    <button id="deny-btn" class="absolute inset-0 w-full h-full bg-gray-900/80 border border-white/10 text-gray-500 rounded-2xl text-xs font-mono uppercase tracking-[0.2em] z-20 transition-all hover:bg-gray-800 backdrop-blur-sm">
-                        DENY
-                    </button>
-                    
-                    <!-- Accept Button -->
-                    <button id="accept-btn" class="absolute inset-0 w-full h-full bg-gradient-to-r from-brand to-purple-600 text-white rounded-2xl font-bold tracking-[0.3em] shadow-[0_0_40px_rgba(255,0,60,0.6)] z-50 opacity-0 pointer-events-none transition-all duration-500 transform scale-90 hover:scale-105">
-                        I ACCEPT
-                    </button>
+                    <button id="deny-btn" class="absolute inset-0 w-full h-full bg-gray-900/80 border border-white/10 text-gray-500 rounded-2xl text-xs font-mono uppercase tracking-[0.2em] z-20 transition-all hover:bg-gray-800 backdrop-blur-sm">DENY</button>
+                    <button id="accept-btn" class="absolute inset-0 w-full h-full bg-gradient-to-r from-brand to-purple-600 text-white rounded-2xl font-bold tracking-[0.3em] shadow-[0_0_40px_rgba(255,0,60,0.6)] z-50 opacity-0 pointer-events-none transition-all duration-500 transform scale-90 hover:scale-105">I ACCEPT</button>
                 </div>
             </div>
         </section>
-
     </main>
 
-    <!-- 5. FINALE OVERLAY -->
+    <!-- FINALE OVERLAY -->
     <div id="finale-overlay">
-        <h1 class="text-7xl md:text-9xl font-display font-bold text-white mb-6 scale-50 opacity-0 transition-all duration-[2000ms] ease-out text-glow" id="finale-text">
-            FOREVER.
-        </h1>
-        <div class="text-brand font-mono tracking-[0.8em] text-xs md:text-sm opacity-0 translate-y-8 transition-all duration-[2000ms] delay-700" id="finale-sub">
-            AMIT + CHARVI // EST. 2025
-        </div>
+        <h1 class="text-7xl md:text-9xl font-display font-bold text-white mb-6 scale-50 opacity-0 transition-all duration-[2000ms] ease-out text-glow" id="finale-text">FOREVER.</h1>
+        <div class="text-brand font-mono tracking-[0.8em] text-xs md:text-sm opacity-0 translate-y-8 transition-all duration-[2000ms] delay-700" id="finale-sub">AMIT + CHARVI // EST. 2025</div>
     </div>
 
-    <!-- ================================================================= -->
-    <!-- ENGINE CODE                                                       -->
-    <!-- ================================================================= -->
+    <!-- LOGIC -->
     <script>
-        // --- 1. FAILSAFE LOADER REMOVAL ---
-        window.onload = function() {
-            // Wait for CSS animation (3s) then force start logic
-            setTimeout(startExperience, 3200);
-        };
+        // 1. FAILSAFE STARTUP
+        window.onload = function() { setTimeout(startExperience, 3200); };
 
         function startExperience() {
             const loader = document.getElementById('loader');
             if (!loader || loader.style.display === 'none') return;
 
-            // Manual Override
             loader.style.opacity = 0;
             setTimeout(() => {
                 loader.style.display = 'none';
                 document.getElementById('main-ui').style.opacity = 1;
+                document.querySelectorAll('.reveal-up').forEach(el => { el.style.opacity = 1; el.style.transform = 'translateY(0)'; });
                 
-                // Audio Hint
                 const hint = document.getElementById('audio-hint');
                 if(hint) { hint.style.opacity = 1; setTimeout(() => hint.style.opacity = 0, 4000); }
 
-                // Init Systems
-                try { init3D(); } catch(e) { console.log("3D Error"); }
-                try { initAnimations(); } catch(e) { console.log("GSAP Error"); }
+                try { init3D(); } catch(e) {}
+                try { initAnimations(); } catch(e) {}
             }, 500);
         }
 
-        // --- 2. ANIMATION SYSTEM (GSAP) ---
+        // 2. GSAP ANIMATIONS
         function initAnimations() {
             if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
             gsap.registerPlugin(ScrollTrigger);
 
-            // CSS Fallbacks override
-            document.querySelectorAll('.reveal-up').forEach(el => {
-                el.style.opacity = 1; el.style.transform = 'translateY(0)';
-            });
-
             // Counter
             const counter = document.getElementById('bpm-counter');
             gsap.to(counter, {
-                innerText: 142,
-                duration: 3,
-                snap: { innerText: 1 },
+                innerText: 142, duration: 3, snap: { innerText: 1 },
                 scrollTrigger: { trigger: counter, start: "top 85%" },
                 ease: "power2.out",
                 onUpdate: function() { counter.innerText = Math.ceil(this.targets()[0].innerText); }
             });
 
-            // Scroll Reveals
-            gsap.utils.toArray('.scroll-reveal').forEach(el => {
+            // Reveals
+            gsap.utils.toArray('.gs-reveal').forEach(el => {
                 gsap.to(el, {
                     scrollTrigger: { trigger: el, start: "top 85%" },
                     y: 0, opacity: 1, duration: 1, ease: "power3.out"
@@ -361,7 +249,7 @@
             });
         }
 
-        // --- 3. AUDIO SYSTEM ---
+        // 3. AUDIO ENGINE
         class AudioSys {
             constructor() { this.ctx = null; this.master = null; this.started = false; }
             init() {
@@ -369,10 +257,10 @@
                 const AC = window.AudioContext || window.webkitAudioContext;
                 this.ctx = new AC();
                 this.master = this.ctx.createGain();
-                this.master.gain.value = 0.35;
+                this.master.gain.value = 0.3;
                 this.master.connect(this.ctx.destination);
                 this.started = true;
-                this.play(0, 'sine', 0.1); // Unlock
+                this.play(0, 'sine', 0.1);
                 this.drone();
             }
             drone() {
@@ -386,4 +274,56 @@
             play(freq, type, dur=0.5) {
                 if(!this.ctx) return;
                 const o = this.ctx.createOscillator(); o.type=type; o.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                const g = this.ctx.createGain(); g.gain.setValu
+                const g = this.ctx.createGain(); g.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime+dur);
+                o.connect(g); g.connect(this.master);
+                o.start(); o.stop(this.ctx.currentTime+dur);
+            }
+            swell() {
+                if(!this.ctx) return;
+                const o = this.ctx.createOscillator(); o.type='sawtooth';
+                o.frequency.setValueAtTime(50, this.ctx.currentTime); o.frequency.linearRampToValueAtTime(800, this.ctx.currentTime+4);
+                const g = this.ctx.createGain(); g.gain.setValueAtTime(0, this.ctx.currentTime); g.gain.linearRampToValueAtTime(0.5, this.ctx.currentTime+3); g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime+6);
+                o.connect(g); g.connect(this.master); o.start(); o.stop(this.ctx.currentTime+6);
+            }
+        }
+        const SFX = new AudioSys();
+
+        // 4. 3D ENGINE
+        const init3D = () => {
+            if (typeof THREE === 'undefined') return;
+            const container = document.getElementById('canvas-container');
+            if(container.children.length > 0) return;
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            camera.position.z = window.innerWidth < 768 ? 45 : 35;
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            const geo = new THREE.BufferGeometry();
+            const pos = []; const col = [];
+            const c1 = new THREE.Color('#ff003c'); const c2 = new THREE.Color('#00f3ff');
+
+            for(let i=0; i<4000; i++) {
+                const t = Math.random()*Math.PI*2;
+                let x = 16 * Math.pow(Math.sin(t), 3);
+                let y = 13 * Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t);
+                const s = Math.sqrt(Math.random()); x*=s; y*=s;
+                let z = (Math.random()-0.5)*12*s;
+                pos.push(x,y,z);
+                const c = Math.random()>0.5 ? c1 : c2;
+                col.push(c.r, c.g, c.b);
+            }
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+            geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+            const mat = new THREE.PointsMaterial({ size: 0.15, vertexColors: true, transparent: true, opacity: 0.8 });
+            const heart = new THREE.Points(geo, mat);
+            heart.scale.set(0.5,0.5,0.5);
+            scene.add(heart);
+
+            const animate = () => {
+                requestAnimationFrame(animate);
+                heart.rotation.y += 0.002;
+ 
