@@ -3,16 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PROTOCOL: ETERNITY // FINAL_PATCH</title>
+    <title>PROTOCOL: ETERNITY // DIRECTOR'S CUT</title>
     
-    <!-- Dependencies -->
+    <!-- ================================================================= -->
+    <!-- EXTERNAL LIBRARIES (GSAP + THREE.JS + TAILWIND)                   -->
+    <!-- ================================================================= -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    <!-- Typography -->
+    <!-- ================================================================= -->
+    <!-- FONTS                                                             -->
+    <!-- ================================================================= -->
     <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=satoshi@300,400,500,700,900&f[]=share-tech-mono@400&display=swap" rel="stylesheet">
 
+    <!-- ================================================================= -->
+    <!-- TAILWIND CONFIG                                                   -->
+    <!-- ================================================================= -->
     <script>
         tailwind.config = {
             theme: {
@@ -24,159 +32,213 @@
                     },
                     colors: {
                         brand: '#ff003c',
+                        brandDim: 'rgba(255, 0, 60, 0.1)',
                         cyan: '#00f3ff',
-                        void: '#030304',
+                        cyanDim: 'rgba(0, 243, 255, 0.1)',
+                        void: '#020203',
                     },
                     animation: {
-                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                     }
                 }
             }
         }
     </script>
 
+    <!-- ================================================================= -->
+    <!-- CUSTOM STYLES                                                     -->
+    <!-- ================================================================= -->
     <style>
-        /* CORE RESETS */
         body {
-            background-color: #030304;
+            background-color: #020203;
             color: #ffffff;
             overflow-x: hidden;
             margin: 0;
-            user-select: none;
             -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
 
-        /* 3D CANVAS */
-        #viewport-3d {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            z-index: 0; pointer-events: none;
+        /* --- LAYERS --- */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
         }
 
-        /* GLASS PANELS */
+        .vignette {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at center, transparent 0%, #020203 140%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .scanlines {
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.2) 2px,
+                rgba(0, 0, 0, 0.2) 4px
+            );
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* --- UI ELEMENTS --- */
         .glass-panel {
-            background: rgba(10, 10, 12, 0.75);
+            background: rgba(10, 12, 16, 0.7);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             transform-style: preserve-3d;
-            transition: transform 0.1s ease-out;
+            will-change: transform;
         }
 
-        /* TEXT GLOWS */
-        .text-glow-brand { text-shadow: 0 0 20px rgba(255, 0, 60, 0.6); }
-        .text-glow-cyan { text-shadow: 0 0 20px rgba(0, 243, 255, 0.4); }
+        .text-glow { text-shadow: 0 0 20px rgba(255, 0, 60, 0.6); }
+        .text-cyan-glow { text-shadow: 0 0 20px rgba(0, 243, 255, 0.4); }
 
-        /* RIGGED INPUT */
+        /* --- INPUT --- */
         #rigged-input {
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
             color: #00f3ff;
             transition: all 0.2s;
         }
         #rigged-input:focus {
             outline: none;
             border-color: #ff003c;
-            box-shadow: 0 0 30px rgba(255, 0, 60, 0.2);
+            box-shadow: 0 0 20px rgba(255, 0, 60, 0.3);
         }
 
-        /* OVERLAYS */
-        #init-overlay, #loader-overlay, #finale-overlay {
-            position: fixed; inset: 0; display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-        }
-        #init-overlay { background: #030304; z-index: 10000; cursor: pointer; }
-        #loader-overlay { background: #030304; z-index: 9999; display: none; }
-        #finale-overlay { background: #000000; z-index: 9998; display: none; opacity: 0; }
+        /* --- OVERLAYS --- */
+        #init-screen { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; justify-content: center; align-items: center; flex-direction: column; cursor: pointer; }
+        #loader { position: fixed; inset: 0; background: #020203; z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; }
+        #finale-overlay { position: fixed; inset: 0; background: black; z-index: 9998; display: none; justify-content: center; align-items: center; flex-direction: column; opacity: 0; }
 
-        ::-webkit-scrollbar { width: 0px; }
+        ::-webkit-scrollbar { width: 0; }
     </style>
 </head>
 <body class="antialiased">
 
-    <!-- 1. 3D BACKGROUND -->
-    <div id="viewport-3d"></div>
-    <div class="fixed inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 pointer-events-none z-0"></div>
-
-    <!-- 2. INIT SCREEN -->
-    <div id="init-overlay">
-        <div class="w-24 h-24 mb-8 relative group">
-            <div class="absolute inset-0 bg-brand/20 rounded-full animate-ping"></div>
-            <div class="relative z-10 w-full h-full rounded-full border border-brand flex items-center justify-center backdrop-blur-md shadow-[0_0_50px_#ff003c]">
+    <!-- 1. AUDIO INITIALIZE SCREEN -->
+    <div id="init-screen">
+        <div class="relative w-24 h-24 mb-8 group">
+            <div class="absolute inset-0 bg-brand/20 rounded-full animate-ping opacity-75"></div>
+            <div class="relative z-10 w-full h-full rounded-full border border-brand flex items-center justify-center backdrop-blur-md shadow-[0_0_40px_#ff003c]">
                 <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             </div>
         </div>
-        <h1 class="text-4xl font-display font-bold text-white tracking-wider mb-2">SYSTEM OFFLINE</h1>
-        <p class="text-gray-500 text-xs font-mono tracking-[0.5em] uppercase">Click to Initialize</p>
+        <h1 class="text-3xl font-display font-bold text-white tracking-widest mb-2">SYSTEM OFFLINE</h1>
+        <p class="text-gray-500 text-xs font-mono tracking-[0.3em] group-hover:text-brand transition-colors">CLICK TO INITIALIZE PROTOCOL</p>
     </div>
 
-    <!-- 3. LOADER -->
-    <div id="loader-overlay">
-        <div class="font-mono text-cyan text-xs tracking-[0.3em] mb-4 animate-pulse text-glow-cyan">LOADING CORE MEMORY...</div>
-        <div class="w-64 h-[2px] bg-gray-900 relative overflow-hidden">
-            <div id="loader-bar" class="absolute top-0 left-0 h-full bg-cyan w-0 shadow-[0_0_20px_#00f3ff]"></div>
+    <!-- 2. SYSTEM LOADER -->
+    <div id="loader">
+        <div class="font-mono text-cyan text-xs tracking-[0.3em] mb-4 animate-pulse text-cyan-glow">DECRYPTING CORE...</div>
+        <div class="w-64 h-[2px] bg-gray-800 relative overflow-hidden rounded-full">
+            <div id="loader-bar" class="absolute top-0 left-0 h-full bg-cyan w-0 shadow-[0_0_15px_#00f3ff]"></div>
         </div>
+        <div class="mt-4 font-mono text-[10px] text-gray-600" id="loader-log"> > Accessing Memory Banks...</div>
     </div>
 
-    <!-- 4. MAIN UI -->
-    <main class="relative z-10 opacity-0 transition-opacity duration-1000" id="main-interface">
+    <!-- 3. BACKGROUND & VISUALS -->
+    <div id="canvas-container"></div>
+    <div class="vignette"></div>
+    <div class="scanlines"></div>
+
+    <!-- 4. MAIN INTERFACE -->
+    <main class="relative z-10 opacity-0" id="main-ui">
 
         <!-- HEADER -->
-        <header class="fixed top-0 w-full p-6 flex justify-between items-center pointer-events-none z-50 mix-blend-screen">
+        <header class="fixed top-0 w-full p-8 flex justify-between items-center pointer-events-none z-50 mix-blend-screen">
             <div class="flex flex-col">
-                <span class="text-[10px] font-mono text-gray-500 tracking-widest">SUB: CHARVI</span>
+                <span class="text-[10px] font-mono text-gray-500 tracking-widest">SUBJECT_ID</span>
+                <span class="text-xs font-bold text-white tracking-widest">CHARVI</span>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-3">
+                <div class="text-[10px] font-mono text-brand tracking-widest">SYNC: 2025.11.20</div>
                 <div class="w-1.5 h-1.5 bg-brand rounded-full animate-pulse shadow-[0_0_10px_#ff003c]"></div>
-                <span class="text-[10px] font-mono text-brand tracking-widest">SYNC: 2025.11.20</span>
             </div>
         </header>
 
-        <!-- HERO -->
-        <section class="h-screen flex flex-col items-center justify-center px-4 relative">
-            <div class="glass-panel p-12 rounded-[2rem] max-w-lg w-full text-center relative border-t border-cyan/20 tilt-card">
-                <div class="inline-block px-3 py-1 rounded-full border border-cyan/30 bg-cyan/5 text-cyan text-[10px] font-mono tracking-[0.3em] mb-10">TEMPORAL LOCK</div>
+        <!-- HERO SECTION -->
+        <section class="h-screen flex flex-col items-center justify-center px-4 relative perspective-1000">
+            <div class="glass-panel p-12 rounded-[3rem] max-w-lg w-full text-center relative border-t border-cyan/20 tilt-card overflow-hidden group">
+                
+                <!-- Holographic Shine -->
+                <div class="absolute top-0 -left-[100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-[-25deg] group-hover:animate-[shine_1s_ease-in-out]"></div>
+
+                <div class="inline-block px-3 py-1 rounded-full border border-cyan/30 bg-cyan/5 text-cyan text-[10px] font-mono tracking-[0.3em] mb-10 backdrop-blur-md">
+                    TEMPORAL LOCK
+                </div>
+                
                 <h1 class="text-8xl font-display font-bold text-white mb-2 tracking-tighter leading-none">
                     09:26 <span class="text-2xl text-gray-600 font-light absolute top-2 ml-2">PM</span>
                 </h1>
-                <div class="text-3xl font-body text-brand font-light tracking-wide mb-10 text-glow-brand">Nov 20, 2025</div>
-                <div class="h-px w-full bg-white/10 mb-8"></div>
+                
+                <div class="text-3xl font-body text-brand font-light tracking-wide mb-10 text-glow">
+                    Nov 20, 2025
+                </div>
+                
+                <div class="h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent mb-8"></div>
+                
                 <p class="text-gray-400 text-sm font-mono leading-relaxed tracking-wide">
-                    // LOG ENTRY:<br>The precise moment probability collapsed into certainty.
+                    // LOG ENTRY:<br>The exact coordinate in time where probability collapsed into certainty.
                 </p>
             </div>
-            <div class="absolute bottom-12 animate-bounce text-gray-500 text-[10px] font-mono tracking-[0.5em]">SCROLL TO DECRYPT</div>
+            
+            <div class="absolute bottom-12 animate-bounce text-gray-600 text-[10px] font-mono tracking-[0.5em] uppercase">
+                Scroll to Decrypt
+            </div>
         </section>
 
-        <!-- EVIDENCE -->
-        <section class="py-32 px-4">
-            <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- CARD 1 -->
-                <div class="glass-panel p-10 rounded-[2rem] relative border-l-4 border-brand tilt-card group hover:bg-white/5 transition-colors">
+        <!-- EVIDENCE SECTION -->
+        <section class="py-32 px-4 relative z-10">
+            <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 perspective-1000">
+                
+                <!-- CARD 1: HEART RATE -->
+                <div class="glass-panel p-10 rounded-[2rem] relative border-l-4 border-brand tilt-card group hover:bg-white/5 transition-colors duration-500 opacity-0 translate-y-20 scroll-reveal">
                     <div class="absolute top-8 right-8 text-[10px] font-mono text-brand border border-brand/30 px-2 py-1 rounded">PHYSIOLOGY</div>
-                    <div class="mb-8 p-4 bg-brand/10 w-fit rounded-2xl text-brand">
+                    
+                    <div class="mb-8 p-4 bg-brand/10 w-fit rounded-2xl text-brand ring-1 ring-brand/30">
                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
                     </div>
-                    <h3 class="text-3xl font-display font-bold text-white mb-3">Cardiac Anomaly</h3>
+                    
+                    <h3 class="text-3xl font-display font-bold text-white mb-3 group-hover:text-brand transition-colors">Cardiac Anomaly</h3>
                     <p class="text-gray-400 text-sm leading-relaxed mb-8 font-mono border-l-2 border-white/10 pl-4">
-                        > HEART RATE: Spiked at 9:26 PM.<br>> DIAGNOSIS: Fatal levels of love.
+                        > ANALYSIS: Heart rate spiked significantly at 9:26 PM.<br>
+                        > CONCLUSION: Fatal levels of love detected.
                     </p>
+                    
                     <div class="flex items-baseline gap-3">
-                        <span class="text-7xl font-display font-bold text-brand text-glow-brand">142</span>
+                        <!-- THE COUNTER -->
+                        <span class="text-7xl font-display font-bold text-brand text-glow tabular-nums" id="bpm-counter">0</span>
                         <span class="text-sm font-mono text-gray-500">BPM</span>
                     </div>
                 </div>
 
-                <!-- CARD 2 -->
-                <div class="glass-panel p-10 rounded-[2rem] relative border-l-4 border-cyan tilt-card group hover:bg-white/5 transition-colors mt-12 md:mt-0">
+                <!-- CARD 2: LATENCY -->
+                <div class="glass-panel p-10 rounded-[2rem] relative border-l-4 border-cyan tilt-card group hover:bg-white/5 transition-colors duration-500 mt-12 md:mt-0 opacity-0 translate-y-20 scroll-reveal">
                     <div class="absolute top-8 right-8 text-[10px] font-mono text-cyan border border-cyan/30 px-2 py-1 rounded">LATENCY</div>
-                    <div class="mb-8 p-4 bg-cyan/10 w-fit rounded-2xl text-cyan">
+                    
+                    <div class="mb-8 p-4 bg-cyan/10 w-fit rounded-2xl text-cyan ring-1 ring-cyan/30">
                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                     </div>
-                    <h3 class="text-3xl font-display font-bold text-white mb-3">Priority Index</h3>
+                    
+                    <h3 class="text-3xl font-display font-bold text-white mb-3 group-hover:text-cyan transition-colors">Priority Index</h3>
                     <p class="text-gray-400 text-sm leading-relaxed mb-8 font-mono border-l-2 border-white/10 pl-4">
-                        > RESPONSE TIME: Instantaneous.<br>> STATUS: Obsessed.
+                        > ANALYSIS: Response time to subject "Charvi" is instantaneous.<br>
+                        > STATUS: Obsessed.
                     </p>
+                    
                     <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden mb-4">
                         <div class="h-full bg-cyan w-[99.9%] shadow-[0_0_20px_#00f3ff] animate-pulse"></div>
                     </div>
@@ -185,55 +247,70 @@
                         <span>PRIORITY: MAX</span>
                     </div>
                 </div>
+
             </div>
         </section>
 
-        <!-- RIGGED CHAT -->
-        <section class="min-h-screen flex flex-col items-center justify-center px-4">
-            <div class="w-full max-w-md glass-panel rounded-3xl overflow-hidden shadow-2xl tilt-card border border-white/10">
-                <div class="bg-black/60 p-5 border-b border-white/5 flex justify-between items-center">
+        <!-- SECTION 3: RIGGED CHAT -->
+        <section class="min-h-screen flex flex-col items-center justify-center px-4 py-20">
+            <div class="w-full max-w-md glass-panel rounded-3xl overflow-hidden shadow-2xl tilt-card border border-white/10 opacity-0 scale-95 scroll-reveal">
+                
+                <div class="bg-black/60 p-5 border-b border-white/5 flex justify-between items-center backdrop-blur-md">
                     <span class="text-[10px] font-mono text-gray-400 tracking-wider">ENCRYPTED_CHANNEL</span>
                     <div class="flex gap-1.5"><div class="w-2 h-2 rounded-full bg-red-500"></div><div class="w-2 h-2 rounded-full bg-yellow-500"></div></div>
                 </div>
-                <div class="p-6 space-y-6 h-64 bg-black/20 overflow-y-auto">
-                    <div class="flex gap-4"><div class="bg-cyan/10 text-cyan p-4 rounded-2xl rounded-tl-none text-xs font-mono border border-cyan/20 max-w-[85%]">Calculation complete. My love > Your love.</div></div>
-                    <div class="flex gap-4 flex-row-reverse"><div class="bg-brand/10 text-brand p-4 rounded-2xl rounded-tr-none text-xs font-mono border border-brand/20 max-w-[85%]">No! I love you way more.</div></div>
-                    <div class="flex gap-4"><div class="bg-cyan/10 text-cyan p-4 rounded-2xl rounded-tl-none text-xs font-mono border border-cyan/20 max-w-[85%]">Incorrect. Try to type it. The system forbids lies.</div></div>
+
+                <div class="p-6 space-y-6 h-72 bg-black/20 overflow-y-auto" id="chat-history">
+                    <div class="flex gap-4">
+                        <div class="bg-cyan/10 text-cyan p-4 rounded-2xl rounded-tl-none text-xs font-mono border border-cyan/20 max-w-[85%] shadow-[0_0_10px_rgba(0,243,255,0.1)]">
+                            Calculation complete. My love > Your love. Margin of error: 0%.
+                        </div>
+                    </div>
+                    <div class="flex gap-4 flex-row-reverse">
+                        <div class="bg-brand/10 text-brand p-4 rounded-2xl rounded-tr-none text-xs font-mono border border-brand/20 max-w-[85%] shadow-[0_0_10px_rgba(255,0,60,0.1)]">
+                            No way! I love you way more.
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="bg-cyan/10 text-cyan p-4 rounded-2xl rounded-tl-none text-xs font-mono border border-cyan/20 max-w-[85%]">
+                            Incorrect statement. The system forbids lies. Try to type it.
+                        </div>
+                    </div>
                 </div>
+
                 <div class="p-6 bg-black/60 border-t border-white/5 relative">
-                    <label class="text-[10px] text-gray-500 font-mono mb-2 block">OVERRIDE ATTEMPT:</label>
+                    <label class="text-[10px] text-gray-500 font-mono mb-2 block tracking-wider">OVERRIDE ATTEMPT:</label>
                     <input type="text" id="rigged-input" placeholder="Type 'I love you more'..." class="w-full p-4 rounded-xl text-white text-sm font-mono placeholder-gray-600" autocomplete="off">
-                    <div id="input-error" class="absolute bottom-3 right-6 text-[10px] text-brand font-mono opacity-0 transition-opacity">⚠ ACCESS DENIED</div>
+                    <div id="input-error" class="absolute bottom-3 right-7 text-[10px] text-brand font-mono opacity-0 transition-opacity tracking-wide font-bold">
+                        ⚠ REWRITTEN BY TRUTH PROTOCOL
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- FINAL CONTRACT -->
-        <section class="h-screen flex flex-col items-center justify-center px-4 relative">
-            <div class="glass-panel p-12 rounded-[2.5rem] max-w-md w-full text-center relative z-20 border border-white/10 tilt-card">
-                <div class="w-20 h-20 mx-auto bg-gradient-to-b from-brand to-purple-900 rounded-full flex items-center justify-center mb-8 shadow-[0_0_50px_rgba(255,0,60,0.4)] animate-float">
-                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <!-- SECTION 4: FINALE CONTRACT -->
+        <section class="h-screen flex flex-col items-center justify-center px-4 relative perspective-1000">
+            
+            <div class="glass-panel p-12 md:p-16 rounded-[3rem] max-w-md w-full text-center relative z-20 border border-white/10 tilt-card opacity-0 translate-y-20 scroll-reveal">
+                
+                <div class="w-24 h-24 mx-auto bg-gradient-to-b from-brand to-purple-900 rounded-full flex items-center justify-center mb-8 shadow-[0_0_60px_rgba(255,0,60,0.6)] animate-float relative group">
+                     <div class="absolute inset-0 bg-brand rounded-full animate-ping opacity-20"></div>
+                    <svg class="w-10 h-10 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
                 
                 <h2 class="text-4xl font-display font-bold text-white mb-4">Accept Truth</h2>
                 <p class="text-gray-400 text-sm mb-12 font-body leading-relaxed">
-                    Confirm that Amit loves you more than scientifically possible.
+                    By clicking below, you acknowledge that Amit's love is the singular universal constant of this timeline.
                 </p>
-
-                <!-- Override Progress Bar (Hidden Initially) -->
-                <div id="hack-progress-container" class="w-full h-1 bg-gray-800 mb-4 rounded-full overflow-hidden opacity-0 transition-opacity">
-                    <div id="hack-progress" class="h-full bg-brand w-0 transition-all duration-100"></div>
-                </div>
-                <div id="hack-text" class="text-[10px] font-mono text-brand mb-4 opacity-0">BYPASSING SECURITY... 0%</div>
 
                 <div class="relative h-16 w-full group">
                     <!-- Deny Button (Runaway) -->
-                    <button id="deny-btn" class="absolute inset-0 w-full h-full bg-gray-900 border border-white/10 text-gray-500 rounded-xl text-xs font-mono uppercase tracking-[0.2em] z-20 transition-all">
+                    <button id="deny-btn" class="absolute inset-0 w-full h-full bg-gray-900/80 border border-white/10 text-gray-500 rounded-2xl text-xs font-mono uppercase tracking-[0.2em] z-20 transition-all hover:bg-gray-800 backdrop-blur-sm">
                         DENY
                     </button>
                     
-                    <!-- Accept Button (Absolute Top Z-Index when revealed) -->
-                    <button id="accept-btn" class="absolute inset-0 w-full h-full bg-brand text-white rounded-xl font-bold tracking-[0.3em] shadow-[0_0_30px_rgba(255,0,60,0.6)] z-50 opacity-0 pointer-events-none transition-all duration-500 transform scale-90 hover:scale-105">
+                    <!-- Accept Button (Reveals later) -->
+                    <button id="accept-btn" class="absolute inset-0 w-full h-full bg-gradient-to-r from-brand to-purple-600 text-white rounded-2xl font-bold tracking-[0.3em] shadow-[0_0_40px_rgba(255,0,60,0.6)] z-50 opacity-0 pointer-events-none transition-all duration-500 transform scale-90 hover:scale-105">
                         I ACCEPT
                     </button>
                 </div>
@@ -244,118 +321,44 @@
 
     <!-- 5. FINALE OVERLAY -->
     <div id="finale-overlay">
-        <h1 class="text-7xl md:text-9xl font-display font-bold text-white mb-4 scale-50 opacity-0 blur-xl transition-all duration-[2000ms] ease-out text-glow-brand" id="finale-text">FOREVER.</h1>
-        <div class="text-brand font-mono tracking-[0.8em] text-xs opacity-0 translate-y-8 transition-all duration-[1000ms] delay-500" id="finale-sub">AMIT + CHARVI</div>
+        <h1 class="text-7xl md:text-9xl font-display font-bold text-white mb-6 scale-50 opacity-0 blur-xl transition-all duration-[2000ms] ease-out text-glow" id="finale-text">
+            FOREVER.
+        </h1>
+        <div class="text-brand font-mono tracking-[0.8em] text-xs md:text-sm opacity-0 translate-y-8 transition-all duration-[2000ms] delay-700" id="finale-sub">
+            AMIT + CHARVI // EST. 2025
+        </div>
     </div>
 
+
+    <!-- ================================================================= -->
+    <!-- ENGINE CODE (AUDIO + VISUALS + LOGIC)                             -->
+    <!-- ================================================================= -->
     <script>
-        // =================================================================
-        // 1. AUDIO ENGINE (Pure Math Synthesis)
-        // =================================================================
-        class AudioCore {
-            constructor() {
-                this.ctx = null; this.master = null;
-            }
+        // --- 1. AUDIO ENGINE (PURE SYNTHESIS) ---
+        class AudioSys {
+            constructor() { this.ctx = null; this.master = null; }
             init() {
                 if(this.ctx) return;
                 const AC = window.AudioContext || window.webkitAudioContext;
                 this.ctx = new AC();
                 this.master = this.ctx.createGain();
-                this.master.gain.value = 0.4;
+                this.master.gain.value = 0.35;
                 this.master.connect(this.ctx.destination);
                 this.drone();
-                this.playTone(200, 'sine', 0.5, 0.1);
+                this.playTone(200, 'sine', 0.5, 0.2);
             }
             drone() {
-                const o1 = this.ctx.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = 40;
-                const o2 = this.ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = 42;
-                const f = this.ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 120;
-                const g = this.ctx.createGain(); g.gain.value = 0.2;
+                const o1 = this.ctx.createOscillator(); o1.type='sawtooth'; o1.frequency.value=40;
+                const o2 = this.ctx.createOscillator(); o2.type='sine'; o2.frequency.value=42;
+                const f = this.ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=100;
+                const g = this.ctx.createGain(); g.gain.value=0.2;
                 o1.connect(f); o2.connect(f); f.connect(g); g.connect(this.master);
                 o1.start(); o2.start();
             }
             playTone(freq, type, dur, vol) {
                 if(!this.ctx) return;
-                const o = this.ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                const o = this.ctx.createOscillator(); o.type=type; o.frequency.setValueAtTime(freq, this.ctx.currentTime);
                 const g = this.ctx.createGain(); g.gain.setValueAtTime(vol, this.ctx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + dur);
+                g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime+dur);
                 o.connect(g); g.connect(this.master);
-                o.start(); o.stop(this.ctx.currentTime + dur);
-            }
-            playType() { this.playTone(800+Math.random()*200, 'square', 0.05, 0.05); }
-            playDeny() { this.playTone(150, 'sawtooth', 0.2, 0.2); }
-            playReveal() { this.playTone(600, 'sine', 1.0, 0.2); }
-            playFinale() {
-                if(!this.ctx) return;
-                const o = this.ctx.createOscillator();
-                const g = this.ctx.createGain();
-                o.frequency.setValueAtTime(100, this.ctx.currentTime);
-                o.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 3);
-                g.gain.setValueAtTime(0.1, this.ctx.currentTime);
-                g.gain.linearRampToValueAtTime(0.5, this.ctx.currentTime + 3);
-                g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 5);
-                o.connect(g); g.connect(this.master);
-                o.start(); o.stop(this.ctx.currentTime + 5);
-            }
-        }
-        const Audio = new AudioCore();
-
-        // =================================================================
-        // 2. 3D ENGINE
-        // =================================================================
-        const init3D = () => {
-            const container = document.getElementById('viewport-3d');
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-            camera.position.z = window.innerWidth < 768 ? 45 : 35;
             
-            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            container.appendChild(renderer.domElement);
-
-            const geo = new THREE.BufferGeometry();
-            const pos = []; const col = [];
-            const c1 = new THREE.Color('#ff003c');
-            const c2 = new THREE.Color('#00f3ff');
-
-            for(let i=0; i<4000; i++) {
-                const t = Math.random()*Math.PI*2;
-                let x = 16 * Math.pow(Math.sin(t), 3);
-                let y = 13 * Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t);
-                const s = Math.sqrt(Math.random());
-                x*=s; y*=s;
-                let z = (Math.random()-0.5)*15*s;
-                pos.push(x,y,z);
-                const c = Math.random()>0.5 ? c1 : c2;
-                col.push(c.r, c.g, c.b);
-            }
-            geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-            geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-            const mat = new THREE.PointsMaterial({ size: 0.2, vertexColors: true, transparent: true, opacity: 0.8 });
-            const heart = new THREE.Points(geo, mat);
-            heart.scale.set(0.5,0.5,0.5);
-            scene.add(heart);
-
-            const animate = () => {
-                requestAnimationFrame(animate);
-                heart.rotation.y += 0.002;
-                const s = 0.5 + Math.sin(Date.now()*0.002)*0.03;
-                heart.scale.set(s,s,s);
-                renderer.render(scene, camera);
-            };
-            animate();
-            
-            window.sceneObj = { camera, heart };
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth/window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-        }
-
-        // =================================================================
-        // 3. LOGIC & INTERACTION
-        // =================================================================
-        
-        // Init
-        document.getElementByI
