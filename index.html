@@ -5,17 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PROTOCOL: ETERNITY</title>
     
-    <!-- CSS -->
+    <!-- 1. CORE DEPENDENCIES -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- JS Libs (Loaded Async for speed) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    <!-- Fonts -->
+    <!-- 2. TYPOGRAPHY -->
     <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=satoshi@300,400,500,700,900&f[]=share-tech-mono@400&display=swap" rel="stylesheet">
 
+    <!-- 3. CONFIG -->
     <script>
         tailwind.config = {
             theme: {
@@ -38,6 +37,7 @@
         }
     </script>
 
+    <!-- 4. STYLES -->
     <style>
         body {
             background-color: #020203;
@@ -53,7 +53,7 @@
         .vignette { position: fixed; inset: 0; background: radial-gradient(circle at center, transparent 0%, #020203 140%); pointer-events: none; z-index: 1; }
         .scanlines { position: fixed; inset: 0; background: repeating-linear-gradient(to bottom, transparent, transparent 2px, rgba(0, 0, 0, 0.2) 2px, rgba(0, 0, 0, 0.2) 4px); pointer-events: none; z-index: 2; }
 
-        /* UI */
+        /* UI ELEMENTS */
         .glass-panel {
             background: rgba(10, 12, 16, 0.7);
             backdrop-filter: blur(20px);
@@ -75,16 +75,24 @@
         }
         #rigged-input:focus { outline: none; border-color: #ff003c; box-shadow: 0 0 20px rgba(255, 0, 60, 0.3); }
 
-        /* OVERLAYS */
-        #loader { position: fixed; inset: 0; background: #020203; z-index: 10000; display: flex; justify-content: center; align-items: center; flex-direction: column; transition: opacity 0.5s; }
-        #finale-overlay { position: fixed; inset: 0; background: black; z-index: 9998; display: none; justify-content: center; align-items: center; flex-direction: column; opacity: 0; }
+        /* LOADER & OVERLAYS */
+        #loader {
+            position: fixed; inset: 0; background: #020203; z-index: 10000;
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+            transition: opacity 0.8s ease-out;
+        }
+        
+        #finale-overlay {
+            position: fixed; inset: 0; background: black; z-index: 9998;
+            display: none; justify-content: center; align-items: center; flex-direction: column; opacity: 0;
+        }
         
         #audio-hint {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
             background: rgba(0,0,0,0.8); border: 1px solid #333; color: #666;
-            font-size: 10px; font-family: monospace; padding: 8px 12px;
+            font-size: 10px; font-family: monospace; padding: 8px 16px;
             border-radius: 20px; pointer-events: none; opacity: 0; transition: opacity 1s;
-            z-index: 50;
+            z-index: 50; letter-spacing: 2px;
         }
 
         ::-webkit-scrollbar { width: 0; }
@@ -92,25 +100,25 @@
 </head>
 <body class="antialiased">
 
-    <!-- 1. AUTO LOADER -->
+    <!-- 5. LOADER SCREEN -->
     <div id="loader">
-        <div class="font-mono text-cyan text-xs tracking-[0.3em] mb-4 animate-pulse text-cyan-glow">INITIALIZING PROTOCOL...</div>
+        <div class="font-mono text-cyan text-xs tracking-[0.3em] mb-4 animate-pulse text-cyan-glow">INITIALIZING...</div>
         <div class="w-64 h-[2px] bg-gray-800 relative overflow-hidden rounded-full">
-            <div id="loader-bar" class="absolute top-0 left-0 h-full bg-cyan w-0 shadow-[0_0_15px_#00f3ff]"></div>
+            <div id="loader-bar" class="absolute top-0 left-0 h-full bg-cyan w-0 shadow-[0_0_15px_#00f3ff]" style="transition: width 0.5s;"></div>
         </div>
         <div class="mt-4 font-mono text-[10px] text-gray-600" id="loader-log"> > Establishing Secure Connection...</div>
     </div>
 
-    <!-- 2. AUDIO HINT -->
-    <div id="audio-hint">TAP ANYWHERE TO ENABLE AUDIO</div>
+    <!-- 6. AUDIO HINT -->
+    <div id="audio-hint">TAP SCREEN TO ENABLE AUDIO</div>
 
-    <!-- 3. BACKGROUND -->
+    <!-- 7. VISUALS -->
     <div id="canvas-container"></div>
     <div class="vignette"></div>
     <div class="scanlines"></div>
 
-    <!-- 4. MAIN UI -->
-    <main class="relative z-10 opacity-0" id="main-ui">
+    <!-- 8. MAIN UI -->
+    <main class="relative z-10 opacity-0 transition-opacity duration-1000" id="main-ui">
 
         <header class="fixed top-0 w-full p-8 flex justify-between items-center pointer-events-none z-50 mix-blend-screen">
             <div class="flex flex-col">
@@ -126,13 +134,19 @@
         <!-- HERO -->
         <section class="h-screen flex flex-col items-center justify-center px-4 relative perspective-1000">
             <div class="glass-panel p-12 rounded-[3rem] max-w-lg w-full text-center relative border-t border-cyan/20 tilt-card overflow-hidden group">
+                <!-- Shine Effect -->
                 <div class="absolute top-0 -left-[100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-[-25deg] animate-[shine_3s_infinite]"></div>
+                
                 <div class="inline-block px-3 py-1 rounded-full border border-cyan/30 bg-cyan/5 text-cyan text-[10px] font-mono tracking-[0.3em] mb-10 backdrop-blur-md">TEMPORAL LOCK</div>
+                
                 <h1 class="text-8xl font-display font-bold text-white mb-2 tracking-tighter leading-none">
                     09:26 <span class="text-2xl text-gray-600 font-light absolute top-2 ml-2">PM</span>
                 </h1>
+                
                 <div class="text-3xl font-body text-brand font-light tracking-wide mb-10 text-glow">Nov 20, 2025</div>
+                
                 <div class="h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent mb-8"></div>
+                
                 <p class="text-gray-400 text-sm font-mono leading-relaxed tracking-wide">
                     // LOG ENTRY:<br>The exact coordinate in time where probability collapsed into certainty.
                 </p>
@@ -143,7 +157,8 @@
         <!-- EVIDENCE -->
         <section class="py-32 px-4 relative z-10">
             <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 perspective-1000">
-                <div class="glass-panel p-10 rounded-[2rem] relative border-l-4 border-brand tilt-card group hover:bg-white/5 transition-colors duration-500 opacity-0 translate-y-20 scroll-reveal">
+                <!-- Card 1 -->
+                <div class="glass-panel p-10 rounded-[2rem] relative border-l-4 border-brand tilt-card group hover:bg-white/5 transition-colors duration-500">
                     <div class="absolute top-8 right-8 text-[10px] font-mono text-brand border border-brand/30 px-2 py-1 rounded">PHYSIOLOGY</div>
                     <h3 class="text-3xl font-display font-bold text-white mb-3 group-hover:text-brand transition-colors">Cardiac Anomaly</h3>
                     <p class="text-gray-400 text-sm leading-relaxed mb-8 font-mono border-l-2 border-white/10 pl-4">> ANALYSIS: Heart rate spiked significantly at 9:26 PM.<br>> CONCLUSION: Fatal levels of love detected.</p>
@@ -152,7 +167,8 @@
                         <span class="text-sm font-mono text-gray-500">BPM</span>
                     </div>
                 </div>
-                <div class="glass-panel p-10 rounded-[2rem] relative border-l-4 border-cyan tilt-card group hover:bg-white/5 transition-colors duration-500 mt-12 md:mt-0 opacity-0 translate-y-20 scroll-reveal">
+                <!-- Card 2 -->
+                <div class="glass-panel p-10 rounded-[2rem] relative border-l-4 border-cyan tilt-card group hover:bg-white/5 transition-colors duration-500 mt-12 md:mt-0">
                     <div class="absolute top-8 right-8 text-[10px] font-mono text-cyan border border-cyan/30 px-2 py-1 rounded">LATENCY</div>
                     <h3 class="text-3xl font-display font-bold text-white mb-3 group-hover:text-cyan transition-colors">Priority Index</h3>
                     <p class="text-gray-400 text-sm leading-relaxed mb-8 font-mono border-l-2 border-white/10 pl-4">> ANALYSIS: Response time to subject "Charvi" is instantaneous.<br>> STATUS: Obsessed.</p>
@@ -164,14 +180,14 @@
             </div>
         </section>
 
-        <!-- CHAT -->
+        <!-- RIGGED CHAT -->
         <section class="min-h-screen flex flex-col items-center justify-center px-4 py-20">
-            <div class="w-full max-w-md glass-panel rounded-3xl overflow-hidden shadow-2xl tilt-card border border-white/10 opacity-0 scale-95 scroll-reveal">
+            <div class="w-full max-w-md glass-panel rounded-3xl overflow-hidden shadow-2xl tilt-card border border-white/10">
                 <div class="bg-black/60 p-5 border-b border-white/5 flex justify-between items-center backdrop-blur-md">
                     <span class="text-[10px] font-mono text-gray-400 tracking-wider">ENCRYPTED_CHANNEL</span>
                     <div class="flex gap-1.5"><div class="w-2 h-2 rounded-full bg-red-500"></div><div class="w-2 h-2 rounded-full bg-yellow-500"></div></div>
                 </div>
-                <div class="p-6 space-y-6 h-72 bg-black/20 overflow-y-auto" id="chat-history">
+                <div class="p-6 space-y-6 h-72 bg-black/20 overflow-y-auto">
                     <div class="flex gap-4"><div class="bg-cyan/10 text-cyan p-4 rounded-2xl rounded-tl-none text-xs font-mono border border-cyan/20 max-w-[85%] shadow-[0_0_10px_rgba(0,243,255,0.1)]">Calculation complete. My love > Your love. Margin of error: 0%.</div></div>
                     <div class="flex gap-4 flex-row-reverse"><div class="bg-brand/10 text-brand p-4 rounded-2xl rounded-tr-none text-xs font-mono border border-brand/20 max-w-[85%] shadow-[0_0_10px_rgba(255,0,60,0.1)]">No way! I love you way more.</div></div>
                     <div class="flex gap-4"><div class="bg-cyan/10 text-cyan p-4 rounded-2xl rounded-tl-none text-xs font-mono border border-cyan/20 max-w-[85%]">Incorrect statement. The system forbids lies. Try to type it.</div></div>
@@ -186,8 +202,8 @@
 
         <!-- FINALE -->
         <section class="h-screen flex flex-col items-center justify-center px-4 relative perspective-1000">
-            <div class="glass-panel p-12 md:p-16 rounded-[3rem] max-w-md w-full text-center relative z-20 border border-white/10 tilt-card opacity-0 translate-y-20 scroll-reveal">
-                <div class="w-24 h-24 mx-auto bg-gradient-to-b from-brand to-purple-900 rounded-full flex items-center justify-center mb-8 shadow-[0_0_60px_rgba(255,0,60,0.6)] animate-float relative group">
+            <div class="glass-panel p-12 md:p-16 rounded-[3rem] max-w-md w-full text-center relative z-20 border border-white/10 tilt-card">
+                <div class="w-24 h-24 mx-auto bg-gradient-to-b from-brand to-purple-900 rounded-full flex items-center justify-center mb-8 shadow-[0_0_60px_rgba(255,0,60,0.6)] relative group">
                      <div class="absolute inset-0 bg-brand rounded-full animate-ping opacity-20"></div>
                     <svg class="w-10 h-10 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
@@ -206,8 +222,25 @@
         <div class="text-brand font-mono tracking-[0.8em] text-xs md:text-sm opacity-0 translate-y-8 transition-all duration-[2000ms] delay-700" id="finale-sub">AMIT + CHARVI // EST. 2025</div>
     </div>
 
+    <!-- 9. LOGIC -->
     <script>
-        // --- AUDIO ENGINE (Safe Mode) ---
+        // --- A. NUCLEAR FAILSAFE ---
+        // If loading takes > 3.5s, force open no matter what
+        setTimeout(() => {
+            const loader = document.getElementById('loader');
+            if(loader.style.display !== 'none') {
+                console.warn("Force starting...");
+                loader.style.opacity = 0;
+                setTimeout(() => { 
+                    loader.style.display = 'none';
+                    document.getElementById('main-ui').style.opacity = 1;
+                    // Attempt to init 3D if it hasn't run
+                    if(!window.sceneObj) init3D();
+                }, 500);
+            }
+        }, 3500);
+
+        // --- B. AUDIO ENGINE ---
         class AudioSys {
             constructor() { this.ctx = null; this.master = null; this.started = false; }
             init() {
@@ -215,10 +248,10 @@
                 const AC = window.AudioContext || window.webkitAudioContext;
                 this.ctx = new AC();
                 this.master = this.ctx.createGain();
-                this.master.gain.value = 0.4;
+                this.master.gain.value = 0.3;
                 this.master.connect(this.ctx.destination);
                 this.started = true;
-                this.play(0, 'sine', 0.1); // Unlocks mobile audio
+                this.play(0, 'sine', 0.1); // Unlock mobile audio
                 this.drone();
             }
             drone() {
@@ -253,69 +286,46 @@
         }
         const SFX = new AudioSys();
 
-        // --- 3D ENGINE ---
+        // --- C. 3D ENGINE ---
         const init3D = () => {
-            const container = document.getElementById('canvas-container');
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-            camera.position.z = window.innerWidth < 768 ? 45 : 35;
-            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            container.appendChild(renderer.domElement);
+            try {
+                const container = document.getElementById('canvas-container');
+                if(container.children.length > 0) return; // Prevent double init
 
-            const geo = new THREE.BufferGeometry();
-            const pos = []; const col = [];
-            const c1 = new THREE.Color('#ff003c'); const c2 = new THREE.Color('#00f3ff');
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+                camera.position.z = window.innerWidth < 768 ? 45 : 35;
+                const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                container.appendChild(renderer.domElement);
 
-            for(let i=0; i<5000; i++) {
-                const t = Math.random()*Math.PI*2;
-                let x = 16 * Math.pow(Math.sin(t), 3);
-                let y = 13 * Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t);
-                const s = Math.sqrt(Math.random()); x*=s; y*=s;
-                let z = (Math.random()-0.5)*12*s;
-                pos.push(x,y,z);
-                const c = Math.random()>0.5 ? c1 : c2;
-                col.push(c.r, c.g, c.b);
-            }
-            geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-            geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-            const mat = new THREE.PointsMaterial({ size: 0.15, vertexColors: true, transparent: true, opacity: 0.8 });
-            const heart = new THREE.Points(geo, mat);
-            heart.scale.set(0.5,0.5,0.5);
-            scene.add(heart);
+                const geo = new THREE.BufferGeometry();
+                const pos = []; const col = [];
+                const c1 = new THREE.Color('#ff003c'); const c2 = new THREE.Color('#00f3ff');
 
-            let lastBeat = 0;
-            const animate = () => {
-                requestAnimationFrame(animate);
-                heart.rotation.y += 0.002;
-                const now = Date.now();
-                const pulse = Math.sin(now * 0.0025);
-                const s = 0.5 + (pulse * 0.05);
-                if (pulse > 0.95 && now - lastBeat > 1000) {
-                    heart.scale.set(0.6, 0.6, 0.6);
-                    SFX.heartbeat(); // Hook audio to visual beat
-                    lastBeat = now;
-                } else {
-                    heart.scale.set(s, s, s);
+                for(let i=0; i<5000; i++) {
+                    const t = Math.random()*Math.PI*2;
+                    let x = 16 * Math.pow(Math.sin(t), 3);
+                    let y = 13 * Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t);
+                    const s = Math.sqrt(Math.random()); x*=s; y*=s;
+                    let z = (Math.random()-0.5)*12*s;
+                    pos.push(x,y,z);
+                    const c = Math.random()>0.5 ? c1 : c2;
+                    col.push(c.r, c.g, c.b);
                 }
-                renderer.render(scene, camera);
-            };
-            animate();
-            window.cam = camera; window.hrt = heart;
-            window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-        }
+                geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+                geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+                const mat = new THREE.PointsMaterial({ size: 0.15, vertexColors: true, transparent: true, opacity: 0.8 });
+                const heart = new THREE.Points(geo, mat);
+                heart.scale.set(0.5,0.5,0.5);
+                scene.add(heart);
 
-        // --- APP LOGIC ---
-        
-        // 1. START SEQUENCE (FAILSAFE)
-        let loaded = false;
-        const startSequence = () => {
-            if(loaded) return;
-            loaded = true;
-            
-            const logs = document.getElementById('loader-log');
-            setTimeout(() => logs.innerText = "> Decrypting Memories...", 500);
-            setTimeout(() => logs.innerText = "> Target: CHARVI found.", 1500);
-
-            gsap.to('#loader-bar', { width: '100%', duration: 3, ease: 'power2.inOut', onComplete: () => {
-                gsap
+                let lastBeat = 0;
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    heart.rotation.y += 0.002;
+                    const now = Date.now();
+                    const pulse = Math.sin(now * 0.0025);
+                    const s = 0.5 + (pulse * 0.05);
+                    if (pulse > 0.95 && now - lastBeat > 1000) {
+                        heart.s
