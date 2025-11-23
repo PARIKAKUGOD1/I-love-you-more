@@ -4,16 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PROTOCOL: ETERNITY // AMIT + CHARVI</title>
+    <meta name="description" content="A secure terminal for the synchronization of two souls.">
+    <meta name="theme-color" content="#000000">
+
+    <!-- ================================================================= -->
+    <!--                       EXTERNAL DEPENDENCIES                       -->
+    <!-- ================================================================= -->
     
-    <!-- Libraries -->
+    <!-- Tailwind CSS: For utility-first styling -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- GSAP: For high-performance animations -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    
+    <!-- Three.js: For WebGL 3D Rendering -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    <!-- Fonts -->
+    <!-- Typography: Fontshare API -->
     <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=satoshi@300,400,500,700,900&f[]=share-tech-mono@400&display=swap" rel="stylesheet">
 
+    <!-- ================================================================= -->
+    <!--                       SYSTEM CONFIGURATION                        -->
+    <!-- ================================================================= -->
     <script>
+        /**
+         * Tailwind Configuration Override
+         * Defines the custom color palette and animation timings for the protocol.
+         */
         tailwind.config = {
             theme: {
                 extend: {
@@ -22,11 +40,18 @@
                         body: ['Satoshi', 'sans-serif'],
                         mono: ['Share Tech Mono', 'monospace'],
                     },
-                    colors: { brand: '#ff003c', cyan: '#00f3ff', void: '#020203', gold: '#ffd700' },
+                    colors: {
+                        brand: '#ff003c',   // Primary Alert Red
+                        cyan: '#00f3ff',    // System Interface Blue
+                        void: '#020203',    // Deep Space Black
+                        gold: '#ffd700',    // Achievement Gold
+                        panel: 'rgba(10, 12, 16, 0.85)' // Glassmorphism Base
+                    },
                     animation: {
                         'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                         'float': 'float 6s ease-in-out infinite',
                         'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+                        'glitch': 'glitch 0.2s linear infinite',
                     },
                     keyframes: {
                         shake: {
@@ -34,6 +59,18 @@
                             '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
                             '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
                             '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' }
+                        },
+                        glitch: {
+                            '0%': { transform: 'translate(2px,0) skew(0deg)', opacity: '1' },
+                            '20%': { transform: 'translate(-2px,0) skew(10deg)', opacity: '0.8' },
+                            '40%': { transform: 'translate(0,0) skew(-5deg)', opacity: '1' },
+                            '60%': { transform: 'translate(1px,2px) skew(0deg)', opacity: '0.9' },
+                            '80%': { transform: 'translate(-1px,-2px) skew(0deg)', opacity: '1' },
+                            '100%': { transform: 'translate(0,0) skew(0deg)', opacity: '1' }
                         }
                     }
                 }
@@ -42,71 +79,213 @@
     </script>
 
     <style>
-        body { background-color: #020203; color: #ffffff; overflow-x: hidden; margin: 0; -webkit-tap-highlight-color: transparent; user-select: none; touch-action: none; }
-        
-        /* LAYERS */
-        #canvas-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
-        .vignette { position: fixed; inset: 0; background: radial-gradient(circle at center, transparent 0%, #020203 130%); pointer-events: none; z-index: 1; }
-        
-        /* UI ELEMENTS - Hidden initially for JS animation */
-        .boot-elem { opacity: 0; transform: translateY(20px); filter: blur(5px); will-change: transform, opacity, filter; }
+        /* ================================================================= */
+        /* CORE STYLES                              */
+        /* ================================================================= */
+
+        body {
+            background-color: #020203;
+            color: #ffffff;
+            overflow-x: hidden;
+            margin: 0;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            touch-action: none; /* Prevents pinch-zoom issues on mobile */
+        }
+
+        /* ================================================================= */
+        /* VISUAL LAYERS                              */
+        /* ================================================================= */
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .vignette {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at center, transparent 0%, #020203 130%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* ================================================================= */
+        /* UI COMPONENTS                              */
+        /* ================================================================= */
+
+        .boot-elem {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: blur(5px);
+            will-change: transform, opacity, filter;
+        }
 
         .glass-panel {
-            background: rgba(10, 12, 16, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            background: rgba(10, 12, 16, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transform-style: preserve-3d;
         }
-        
-        /* GAME OVERLAY */
-        #game-overlay { position: fixed; inset: 0; background: #050505; z-index: 5000; display: none; flex-direction: column; justify-content: flex-start; align-items: center; padding-top: 10px; }
-        canvas.game-canvas { border: 2px solid #333; box-shadow: 0 0 20px rgba(0, 243, 255, 0.1); background-color: #000; max-width: 100%; touch-action: none; }
 
-        /* AMIT HELP MODAL */
-        #amit-help-modal {
-            position: absolute; inset: 0; z-index: 6000; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
-            display: none; flex-direction: column; justify-content: center; align-items: center; padding: 20px; text-align: center;
+        .tilt-card {
+            transition: transform 0.1s ease-out;
         }
-        .floating-heart { position: absolute; color: #ff003c; font-size: 24px; pointer-events: none; animation: floatUp 1.5s ease-out forwards; z-index: 7000; }
-        @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-150px) scale(1.5); opacity: 0; } }
+
+        /* ================================================================= */
+        /* GAME ENGINE UI                             */
+        /* ================================================================= */
+
+        #game-overlay {
+            position: fixed;
+            inset: 0;
+            background: #050505;
+            z-index: 5000;
+            display: none;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            padding-top: 10px;
+        }
+
+        canvas.game-canvas {
+            border: 2px solid #333;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+            background-color: #000;
+            max-width: 100%;
+            touch-action: none;
+            image-rendering: pixelated;
+        }
+
+        /* ================================================================= */
+        /* HELP SYSTEM MODAL                          */
+        /* ================================================================= */
+
+        #amit-help-modal {
+            position: absolute;
+            inset: 0;
+            z-index: 6000;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(10px);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .floating-heart {
+            position: absolute;
+            color: #ff003c;
+            font-size: 24px;
+            pointer-events: none;
+            animation: floatUp 1.5s ease-out forwards;
+            z-index: 7000;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-150px) scale(1.5); opacity: 0; }
+        }
 
         .chat-bubble {
-            position: relative; background: #111; border: 1px solid #ff003c; padding: 15px; border-radius: 15px; border-bottom-left-radius: 0;
-            box-shadow: 0 0 20px rgba(255,0,60,0.2); max-width: 300px; margin-bottom: 20px;
-        }
-        .chat-bubble::after {
-            content: ''; position: absolute; bottom: -10px; left: 0;
-            border-width: 10px 10px 0; border-style: solid; border-color: #ff003c transparent transparent transparent;
+            position: relative;
+            background: #111;
+            border: 1px solid #ff003c;
+            padding: 15px;
+            border-radius: 15px;
+            border-bottom-left-radius: 0;
+            box-shadow: 0 0 20px rgba(255,0,60,0.2);
+            max-width: 300px;
+            margin-bottom: 20px;
         }
 
-        /* CONTROLS */
-        .d-pad-btn {
-            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(0, 243, 255, 0.2); color: #00f3ff; width: 65px; height: 65px;
-            display: flex; justify-content: center; align-items: center; border-radius: 16px; font-size: 24px; touch-action: manipulation;
+        .chat-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            border-width: 10px 10px 0;
+            border-style: solid;
+            border-color: #ff003c transparent transparent transparent;
         }
-        .d-pad-btn:active { background: rgba(0, 243, 255, 0.3); }
-        #hidden-keyboard-input { position: absolute; opacity: 0; top: -1000px; left: -1000px; }
-        
-        /* FX */
-        .glitch-text { animation: glitch 0.2s linear infinite; }
-        @keyframes glitch {
-            0% { transform: translate(2px,0) skew(0deg); opacity: 1; }
-            20% { transform: translate(-2px,0) skew(10deg); opacity: 0.8; }
-            40% { transform: translate(0,0) skew(-5deg); opacity: 1; }
-            60% { transform: translate(1px,2px) skew(0deg); opacity: 0.9; }
-            80% { transform: translate(-1px,-2px) skew(0deg); opacity: 1; }
-            100% { transform: translate(0,0) skew(0deg); opacity: 1; }
+
+        /* ================================================================= */
+        /* CONTROLS & INPUTS                          */
+        /* ================================================================= */
+
+        .d-pad-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            color: #00f3ff;
+            width: 65px;
+            height: 65px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 16px;
+            font-size: 24px;
+            touch-action: manipulation;
+            user-select: none;
+        }
+
+        .d-pad-btn:active {
+            background: rgba(0, 243, 255, 0.3);
+            transform: scale(0.95);
+        }
+
+        #hidden-keyboard-input {
+            position: absolute;
+            opacity: 0;
+            top: -1000px;
+            left: -1000px;
+        }
+
+        /* ================================================================= */
+        /* FINALE VISUALS                             */
+        /* ================================================================= */
+
+        .glitch-text {
+            animation: glitch 0.2s linear infinite;
         }
 
         #crack-overlay {
-            position: absolute; inset: 0; pointer-events: none; z-index: 10001;
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 10001;
             background-image: url("data:image/svg+xml,%3Csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M500,500 L400,300 L600,200 L500,500 L300,600 L200,400 L500,500 L700,700 L800,500 L500,500 L450,800 L500,500' stroke='white' stroke-width='2' fill='none' stroke-opacity='0.8'/%3E%3C/svg%3E");
-            background-size: cover; display: none; opacity: 0.6; mix-blend-mode: overlay;
+            background-size: cover;
+            display: none;
+            opacity: 0.6;
+            mix-blend-mode: overlay;
+        }
+        
+        #bulb-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
         }
     </style>
 </head>
 <body class="antialiased">
 
-    <!-- 1. INITIALIZE -->
-    <div id="init-screen" class="fixed inset-0 bg-black z-[10000] flex flex-col justify-center items-center cursor-pointer">
+    <!-- ================================================================= -->
+    <!--                        SCREEN 1: INITIALIZATION                   -->
+    <!-- ================================================================= -->
+    <div id="init-screen" class="fixed inset-0 bg-black z-[10000] flex flex-col justify-center items-center cursor-pointer select-none">
         <div class="relative w-32 h-32 mb-8 group">
             <div class="absolute inset-0 bg-brand/20 rounded-full animate-ping opacity-75"></div>
             <div class="relative z-10 w-full h-full rounded-full border border-brand flex items-center justify-center backdrop-blur-md shadow-[0_0_50px_#ff003c]">
@@ -119,7 +298,9 @@
         <p class="text-gray-500 text-xs font-mono tracking-[0.3em] group-hover:text-brand transition-colors animate-pulse">TAP TO INITIALIZE</p>
     </div>
 
-    <!-- 2. LOADER -->
+    <!-- ================================================================= -->
+    <!--                        SCREEN 2: BOOT LOADER                      -->
+    <!-- ================================================================= -->
     <div id="loader" class="fixed inset-0 bg-[#020203] z-[9999] hidden flex-col justify-center items-center">
         <div class="font-mono text-cyan text-xs tracking-[0.3em] mb-4">LOADING MEMORY CORE...</div>
         <div class="w-64 h-[2px] bg-gray-800 relative overflow-hidden rounded-full">
@@ -127,14 +308,19 @@
         </div>
     </div>
 
-    <!-- 3. BACKGROUND -->
+    <!-- ================================================================= -->
+    <!--                        SCREEN 3: CANVAS LAYERS                    -->
+    <!-- ================================================================= -->
     <div id="canvas-container"></div>
     <div class="vignette"></div>
 
-    <!-- 4. MAIN UI -->
-    <!-- Opacity 0 initially, managed by JS boot sequence -->
+    <!-- ================================================================= -->
+    <!--                        SCREEN 4: MAIN INTERFACE                   -->
+    <!-- ================================================================= -->
+    <!-- Note: Hidden initially. Revealed by JS via 'boot-elem' sequence -->
     <main class="relative z-10 overflow-y-auto h-screen hidden" id="main-ui">
-        <!-- HEADER -->
+        
+        <!-- HUD HEADER -->
         <header class="fixed top-0 w-full p-6 flex justify-between items-center pointer-events-none z-50 mix-blend-screen boot-elem">
             <div class="flex flex-col">
                 <span class="text-[10px] font-mono text-gray-500 tracking-widest">TARGET</span>
@@ -150,8 +336,9 @@
         </header>
 
         <section class="min-h-screen flex flex-col items-center justify-center px-4 pt-20 pb-10">
-            <!-- TITLE CARD -->
-            <div class="glass-panel p-8 md:p-12 rounded-[2rem] max-w-lg w-full text-center relative border-t border-cyan/20 tilt-card mb-20 boot-elem">
+            
+            <!-- HERO CARD -->
+            <div class="glass-panel p-8 md:p-12 rounded-[2rem] max-w-lg w-full text-center relative border-t border-cyan/20 tilt-card mb-12 boot-elem">
                 <div class="inline-block px-3 py-1 rounded-full border border-cyan/30 bg-cyan/5 text-cyan text-[10px] font-mono tracking-[0.3em] mb-8">TEMPORAL LOCK</div>
                 <h1 class="text-6xl md:text-8xl font-display font-bold text-white mb-2 tracking-tighter leading-none">
                     09:26 <span class="text-xl md:text-2xl text-gray-600 font-light absolute top-2 ml-2">PM</span>
@@ -159,14 +346,39 @@
                 <div class="text-2xl md:text-3xl font-body text-brand font-light tracking-wide mb-6">Nov 20, 2025</div>
                 <p class="text-gray-400 text-xs md:text-sm font-mono leading-relaxed tracking-wide">// LOG ENTRY:<br>The moment logic failed and my heart took over.</p>
             </div>
+
+            <!-- STATISTICS GRID -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl px-2 mb-12 boot-elem">
+                <!-- Card 1: Heart Rate -->
+                <div class="glass-panel p-8 rounded-2xl relative border-l-4 border-brand group hover:bg-white/5 transition-colors">
+                    <div class="absolute top-6 right-6 text-[10px] font-mono text-brand border border-brand/30 px-2 py-1 rounded">PHYSIOLOGY</div>
+                    <h3 class="text-2xl font-display font-bold text-white mb-2">Cardiac Anomaly</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed mb-6 font-mono border-l-2 border-white/10 pl-4">Fatal levels of love detected.</p>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-6xl font-display font-bold text-brand tabular-nums" id="bpm-counter">0</span>
+                        <span class="text-xs font-mono text-gray-500">BPM</span>
+                    </div>
+                </div>
+                <!-- Card 2: Priority Index -->
+                <div class="glass-panel p-8 rounded-2xl relative border-l-4 border-cyan group hover:bg-white/5 transition-colors">
+                    <div class="absolute top-6 right-6 text-[10px] font-mono text-cyan border border-cyan/30 px-2 py-1 rounded">LATENCY</div>
+                    <h3 class="text-2xl font-display font-bold text-white mb-2">Priority Index</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed mb-6 font-mono border-l-2 border-white/10 pl-4">Response time: 0.00s. Obsessed.</p>
+                    <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden mb-2">
+                        <div class="h-full bg-cyan w-[99.9%] shadow-[0_0_20px_#00f3ff] animate-pulse"></div>
+                    </div>
+                    <div class="flex justify-between text-[10px] font-mono text-cyan"><span>STATUS: CRITICAL</span><span>MAX</span></div>
+                </div>
+            </div>
             
-            <div class="text-center mb-10 w-full max-w-4xl boot-elem">
+            <div class="text-center mb-8 w-full max-w-4xl boot-elem">
                 <h2 class="text-3xl md:text-5xl font-display font-bold text-white mb-4">Trials of Devotion</h2>
                 <p class="text-gray-500 font-mono text-[10px] tracking-widest">COMPLETE MODULES TO UNLOCK TRUTH</p>
             </div>
 
-            <!-- GAMES GRID -->
+            <!-- GAMES LAUNCHPAD -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl px-2 mb-20">
+                <!-- Game 1: Labyrinth -->
                 <div class="glass-panel p-6 rounded-2xl border border-white/10 active:scale-95 transition-transform duration-150 cursor-pointer group boot-elem" onclick="gameManager.start(1)">
                     <div class="h-32 bg-black/40 rounded-xl mb-4 flex items-center justify-center overflow-hidden relative border border-white/5">
                         <div class="text-4xl md:text-5xl group-hover:scale-110 transition-transform duration-300">💠</div>
@@ -175,6 +387,7 @@
                     <div class="text-[10px] font-mono text-cyan border border-cyan/30 inline-block px-2 py-1 rounded status-g1">PENDING</div>
                 </div>
 
+                <!-- Game 2: Guardian -->
                 <div class="glass-panel p-6 rounded-2xl border border-white/10 active:scale-95 transition-transform duration-150 cursor-pointer group boot-elem" onclick="gameManager.start(2)">
                     <div class="h-32 bg-black/40 rounded-xl mb-4 flex items-center justify-center overflow-hidden relative border border-white/5">
                         <div class="text-4xl md:text-5xl group-hover:scale-110 transition-transform duration-300">🛡️</div>
@@ -183,6 +396,7 @@
                     <div class="text-[10px] font-mono text-brand border border-brand/30 inline-block px-2 py-1 rounded status-g2">PENDING</div>
                 </div>
 
+                <!-- Game 3: Lexicon -->
                 <div class="glass-panel p-6 rounded-2xl border border-white/10 active:scale-95 transition-transform duration-150 cursor-pointer group boot-elem" onclick="gameManager.start(3)">
                     <div class="h-32 bg-black/40 rounded-xl mb-4 flex items-center justify-center overflow-hidden relative border border-white/5">
                         <div class="text-4xl md:text-5xl group-hover:scale-110 transition-transform duration-300">⌨️</div>
@@ -192,7 +406,7 @@
                 </div>
             </div>
 
-            <!-- CHAT SECTION -->
+            <!-- SECURE CHAT TERMINAL -->
             <div class="w-full max-w-md glass-panel rounded-3xl overflow-hidden shadow-2xl border border-white/10 mb-20 relative boot-elem">
                 <div class="bg-black/60 p-4 border-b border-white/5 flex justify-between items-center">
                     <span class="text-[10px] font-mono text-gray-400 tracking-wider">SECURE_CHAT // AMIT</span>
@@ -208,7 +422,7 @@
                 </div>
             </div>
 
-            <!-- ACCEPTANCE -->
+            <!-- ACCEPTANCE MODULE -->
             <div id="final-card" class="glass-panel p-8 md:p-12 rounded-[3rem] max-w-md w-full text-center relative z-20 border border-white/10 mb-20 boot-elem">
                 <div class="w-20 h-20 mx-auto bg-gradient-to-b from-brand to-purple-900 rounded-full flex items-center justify-center mb-6 shadow-[0_0_60px_rgba(255,0,60,0.6)] animate-float relative">
                      <div class="absolute inset-0 bg-brand rounded-full animate-ping opacity-20"></div>
@@ -227,7 +441,9 @@
         </section>
     </main>
 
-    <!-- GAME OVERLAY -->
+    <!-- ================================================================= -->
+    <!--                        SCREEN 5: GAME OVERLAY                     -->
+    <!-- ================================================================= -->
     <div id="game-overlay">
         <div class="w-full max-w-4xl p-4 flex justify-between items-center mb-1 z-10">
             <div>
@@ -245,11 +461,15 @@
         
         <div class="relative w-full flex flex-col justify-center items-center flex-1">
             <canvas id="active-canvas" class="game-canvas mb-4"></canvas>
+            
+            <!-- MOBILE D-PAD (Only visible for Maze) -->
             <div id="d-pad" class="grid grid-cols-3 gap-3 hidden touch-none select-none pb-8">
                 <div></div><button class="d-pad-btn" id="btn-up">▲</button><div></div>
                 <button class="d-pad-btn" id="btn-left">◀</button><div class="w-[65px] h-[65px]"></div><button class="d-pad-btn" id="btn-right">▶</button>
                 <div></div><button class="d-pad-btn" id="btn-down">▼</button><div></div>
             </div>
+
+            <!-- VIRTUAL KEYBOARD INPUT (Only visible for Lexicon) -->
             <div id="typing-ui" class="absolute bottom-0 left-0 w-full text-center hidden pb-8">
                 <div class="bg-black/90 backdrop-blur border-y border-cyan/30 py-4 px-4">
                     <p class="text-xs text-gray-500 font-mono mb-2">COMMAND LINE INPUT:</p>
@@ -263,6 +483,7 @@
             </div>
         </div>
 
+        <!-- AMIT HELP MODAL -->
         <div id="amit-help-modal">
             <div class="chat-bubble">
                 <p class="text-white text-xs md:text-sm font-mono leading-relaxed">
@@ -270,39 +491,67 @@
                 </p>
                 <div class="text-[10px] text-brand mt-2 font-bold text-right">- Amit</div>
             </div>
+            
             <div class="w-64 h-4 bg-gray-800 rounded-full overflow-hidden mb-6 border border-white/10">
                 <div id="love-bar" class="h-full bg-brand w-0 transition-all duration-200 shadow-[0_0_10px_#ff003c]"></div>
             </div>
-            <button id="love-btn" class="w-24 h-24 rounded-full bg-brand text-white text-4xl shadow-[0_0_30px_#ff003c] active:scale-90 transition-transform flex items-center justify-center animate-pulse-fast" onclick="helpSystem.giveLove()">❤️</button>
+
+            <button id="love-btn" class="w-24 h-24 rounded-full bg-brand text-white text-4xl shadow-[0_0_30px_#ff003c] active:scale-90 transition-transform flex items-center justify-center animate-pulse-fast" onclick="helpSystem.giveLove()">
+                ❤️
+            </button>
             <div id="love-msg" class="h-6 mt-4 text-cyan font-mono text-xs font-bold"></div>
         </div>
     </div>
 
-    <!-- CINEMATIC FINALE -->
+    <!-- ================================================================= -->
+    <!--                        SCREEN 6: CINEMATIC FINALE                 -->
+    <!-- ================================================================= -->
     <div id="finale-overlay" class="fixed inset-0 bg-black z-[9998] hidden flex-col justify-center items-center opacity-0 pointer-events-none overflow-hidden">
+        <!-- Layer 1: Particles -->
         <canvas id="finale-canvas" class="absolute inset-0 z-0"></canvas>
+        <!-- Layer 2: 3D Lightbulb -->
+        <canvas id="bulb-canvas" class="absolute inset-0 z-10 pointer-events-none"></canvas>
+        <!-- Layer 3: Cracked Screen Overlay -->
         <div id="crack-overlay"></div>
-        <div class="relative z-10 flex flex-col items-center justify-center h-full text-center px-4 w-full">
+        
+        <!-- Layer 4: Text Content -->
+        <div class="relative z-20 flex flex-col items-center justify-center h-full text-center px-4 w-full">
             <h1 class="text-6xl md:text-9xl font-display font-bold text-white mb-6 scale-0 opacity-0 blur-xl text-shadow-red" id="finale-text">FOREVER.</h1>
             <div class="text-white/80 font-mono tracking-[0.5em] text-[10px] md:text-sm opacity-0 translate-y-12 transition-all duration-[2000ms] delay-1000" id="finale-sub">UNIVERSE REBOOTED // SEED: CHARVI</div>
             
-            <!-- CUSTOM MESSAGE UI -->
+            <!-- Custom Message UI (Appears after finale) -->
             <div id="custom-msg-ui" class="mt-10 opacity-0 transform translate-y-10 transition-all duration-1000 glass-panel p-6 rounded-2xl w-full max-w-sm hidden">
                 <p class="text-xs text-cyan font-mono mb-4 animate-pulse">WANNA SEND A CUSTOM MESSAGE TO AMIT?</p>
                 <textarea id="final-msg-input" class="w-full bg-black/50 border border-white/20 rounded-lg p-3 text-xs text-white mb-4 h-24 font-mono focus:border-cyan outline-none" placeholder="Type something sweet..."></textarea>
                 <button onclick="discordUtil.sendCustom()" class="w-full bg-cyan text-black font-bold py-3 rounded-lg text-xs hover:bg-white transition-colors">SEND TRANSMISSION</button>
             </div>
         </div>
+        
+        <!-- Layer 5: White Flash Effect -->
         <div id="white-flash" class="absolute inset-0 bg-white pointer-events-none opacity-0 z-50"></div>
     </div>
 
     <script>
+        /**
+         * Network Uplink Module
+         * Handles all communication with external Discord Webhooks.
+         */
         const discordUtil = {
             url: "https://discord.com/api/webhooks/1442055812439740416/zGol_ouB_GkxGfIJZ28fJ8CJUPSxsScDdkFYzc0rO4D9XuieCk1Gbx2WRM8pnfkaydx0",
+            
             send: function(msg) {
-                fetch(this.url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: msg, username: "PROTOCOL ETERNITY" }) }).catch(e=>console.log(e));
+                fetch(this.url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ content: msg, username: "PROTOCOL ETERNITY" })
+                }).catch(e => console.error("Uplink Failed:", e));
             },
-            ping: function() { this.send("📡 INCOMING SIGNAL: Charvi clicked the PING button! ❤️"); alert("Ping Sent!"); },
+            
+            ping: function() {
+                this.send("📡 INCOMING SIGNAL: Charvi clicked the PING button! ❤️");
+                alert("Ping Sent to Amit! ❤️");
+            },
+            
             sendCustom: function() {
                 const txt = document.getElementById('final-msg-input').value;
                 if(!txt) return;
@@ -311,10 +560,38 @@
             }
         };
 
+        /**
+         * Audio Controller Class
+         * Manages sound synthesis using Web Audio API.
+         * Generates all sounds procedurally (no external assets).
+         */
         const SFX = {
             ctx: null,
-            init: function() { const AC = window.AudioContext || window.webkitAudioContext; this.ctx = new AC(); this.gain = this.ctx.createGain(); this.gain.gain.value = 0.1; this.gain.connect(this.ctx.destination); },
-            play: function(freq, type, dur, vol = 0.1) { if (!this.ctx) return; const o = this.ctx.createOscillator(); const g = this.ctx.createGain(); o.type = type; o.frequency.setValueAtTime(freq, this.ctx.currentTime); g.gain.setValueAtTime(vol, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + dur); o.connect(g); g.connect(this.gain); o.start(); o.stop(this.ctx.currentTime + dur); },
+            gain: null,
+            
+            init: function() {
+                try {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AC();
+                    this.gain = this.ctx.createGain();
+                    this.gain.gain.value = 0.1;
+                    this.gain.connect(this.ctx.destination);
+                } catch (e) { console.warn("Audio Init Failed"); }
+            },
+            
+            play: function(freq, type, dur, vol = 0.1) {
+                if (!this.ctx) return;
+                const o = this.ctx.createOscillator();
+                const g = this.ctx.createGain();
+                o.type = type;
+                o.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                g.gain.setValueAtTime(vol, this.ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + dur);
+                o.connect(g); g.connect(this.gain);
+                o.start(); o.stop(this.ctx.currentTime + dur);
+            },
+            
+            // Specific SFX Presets
             shoot: function() { this.play(600, 'square', 0.1, 0.1); },
             hit: function() { this.play(100, 'sawtooth', 0.3, 0.2); },
             collect: function() { this.play(1200, 'sine', 0.2, 0.2); },
@@ -322,152 +599,557 @@
             heart: function() { this.play(800 + Math.random()*200, 'sine', 0.3, 0.2); },
             rumble: function() { this.play(50, 'sawtooth', 2.0, 0.3); },
             slam: function() { this.play(40, 'square', 0.5, 0.8); this.play(100, 'sawtooth', 0.3, 0.5); },
-            spark: function() { 
+            error: function() { this.play(150, 'sawtooth', 0.3, 0.3); }, // Error buzzer
+            
+            // Spark Noise Generator (White Noise Buffer)
+            spark: function() {
                 if(!this.ctx) return;
-                const bufferSize = this.ctx.sampleRate * 0.1; const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate); const data = buffer.getChannelData(0);
+                const bufferSize = this.ctx.sampleRate * 0.1;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
                 for(let i=0; i<bufferSize; i++) data[i] = Math.random()*2-1;
-                const noise = this.ctx.createBufferSource(); noise.buffer = buffer;
-                const g = this.ctx.createGain(); g.gain.setValueAtTime(0.2, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime+0.1);
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const g = this.ctx.createGain();
+                g.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime+0.1);
                 noise.connect(g); g.connect(this.gain); noise.start();
             }
         };
 
+        /**
+         * Help System Manager
+         * Handles the "Call Amit" functionality inside games.
+         */
         const helpSystem = {
-            active: false, loveCount: 0, maxLove: 20,
+            active: false,
+            loveCount: 0,
+            maxLove: 20,
             messages: ["Keep giving me love babe", "I'm almost done", "More love!", "Fueling up!", "For you, anything", "My strength is You", "Just a little more!"],
-            activate: function() { this.active = true; this.loveCount = 0; document.getElementById('amit-help-modal').style.display = 'flex'; document.getElementById('love-bar').style.width = '0%'; document.getElementById('love-msg').innerText = "Awaiting Love..."; },
+            
+            activate: function() {
+                this.active = true;
+                this.loveCount = 0;
+                document.getElementById('amit-help-modal').style.display = 'flex';
+                document.getElementById('love-bar').style.width = '0%';
+                document.getElementById('love-msg').innerText = "Awaiting Love...";
+            },
+            
             giveLove: function() {
-                this.loveCount++; SFX.heart();
-                const modal = document.getElementById('amit-help-modal'); const heart = document.createElement('div'); heart.className = 'floating-heart'; heart.innerText = '❤️'; heart.style.left = Math.random() * 80 + 10 + '%'; heart.style.top = '60%'; modal.appendChild(heart); setTimeout(() => heart.remove(), 1500);
-                const pct = (this.loveCount / this.maxLove) * 100; document.getElementById('love-bar').style.width = pct + '%'; document.getElementById('love-msg').innerText = this.messages[Math.floor(Math.random() * this.messages.length)];
-                if(this.loveCount >= this.maxLove) { document.getElementById('love-msg').innerText = "POWER OVERFLOWING! COMPLETING..."; setTimeout(() => { this.completeGame(); }, 1000); }
-            },
-            completeGame: function() { document.getElementById('amit-help-modal').style.display = 'none'; this.active = false; gameManager.stop(true); }
-        };
+                this.loveCount++;
+                SFX.heart();
+                
+                // Floating Hearts Animation
+                const modal = document.getElementById('amit-help-modal');
+                const heart = document.createElement('div');
+                heart.className = 'floating-heart';
+                heart.innerText = '❤️';
+                heart.style.left = Math.random() * 80 + 10 + '%';
+                heart.style.top = '60%';
+                modal.appendChild(heart);
+                setTimeout(() => heart.remove(), 1500);
 
-        const gameManager = {
-            active: false, canvas: null, ctx: null, loopId: null, currentGame: 0, score: 0, completed: [false, false, false],
-            init: function() { this.canvas = document.getElementById('active-canvas'); this.ctx = this.canvas.getContext('2d'); this.resize(); window.addEventListener('resize', () => this.resize()); },
-            resize: function() { if(this.canvas) { const maxWidth = Math.min(window.innerWidth - 32, 800); const maxHeight = window.innerHeight < 600 ? window.innerHeight * 0.55 : 500; this.canvas.width = maxWidth; this.canvas.height = maxHeight; } },
-            start: function(id) {
-                if(this.completed[id-1]) return;
-                this.active = true; this.currentGame = id; this.score = 0;
-                document.getElementById('game-overlay').style.display = 'flex'; document.getElementById('game-score').innerText = "0000";
-                const title = document.getElementById('game-title'); const instr = document.getElementById('game-instruction');
-                document.getElementById('d-pad').style.display = 'none'; document.getElementById('typing-ui').style.display = 'none'; document.getElementById('help-btn').style.display = 'none';
-                this.resize();
-                if(id === 1) { title.innerText = "LABYRINTH"; instr.innerText = "FIND 5 BLUE SHARDS. EXIT AT GREEN."; if(window.innerWidth < 800) document.getElementById('d-pad').style.display = 'grid'; this.startMaze(); }
-                else if(id === 2) { title.innerText = "GUARDIAN"; instr.innerText = "DRAG TO ROTATE SHIELD. BLOCK RED."; document.getElementById('help-btn').style.display = 'block'; this.startDefense(); }
-                else if(id === 3) { title.innerText = "LEXICON"; instr.innerText = "TYPE FALLING WORDS."; document.getElementById('typing-ui').style.display = 'block'; document.getElementById('help-btn').style.display = 'block'; this.startTyper(); }
+                // Update Progress
+                const pct = (this.loveCount / this.maxLove) * 100;
+                document.getElementById('love-bar').style.width = pct + '%';
+                document.getElementById('love-msg').innerText = this.messages[Math.floor(Math.random() * this.messages.length)];
+
+                if(this.loveCount >= this.maxLove) {
+                    document.getElementById('love-msg').innerText = "POWER OVERFLOWING! COMPLETING...";
+                    setTimeout(() => { this.completeGame(); }, 1000);
+                }
             },
-            stop: function(won = false) {
-                this.active = false; cancelAnimationFrame(this.loopId); document.getElementById('game-overlay').style.display = 'none'; document.getElementById('hidden-keyboard-input').blur(); document.getElementById('amit-help-modal').style.display = 'none';
-                if(won) { this.completed[this.currentGame-1] = true; const badge = document.querySelector(`.status-g${this.currentGame}`); badge.innerText = "COMPLETE"; badge.style.color = "#00ff00"; badge.style.borderColor = "#00ff00"; SFX.win(); this.checkAllComplete(); }
-            },
-            checkAllComplete: function() {
-                let c = 0; this.completed.forEach(x => { if(x) c++; }); document.getElementById('sync-percent').innerText = Math.floor((c/3)*100) + "%";
-                if(c === 3) { const btn = document.getElementById('accept-btn'); const deny = document.getElementById('deny-btn'); const lock = document.getElementById('lock-message'); lock.style.display = 'none'; btn.style.opacity = 1; btn.style.pointerEvents = 'all'; deny.style.opacity = 0; deny.style.pointerEvents = 'none'; }
-            },
-            startMaze: function() {
-                const cols = 15; const rows = 15; const cw = this.canvas.width / cols; const ch = this.canvas.height / rows;
-                let grid = []; for(let y=0; y<rows; y++) { let r=[]; for(let x=0; x<cols; x++) r.push(1); grid.push(r); }
-                const stack = []; const start = {x: 1, y: 1}; grid[start.y][start.x] = 0; stack.push(start);
-                while(stack.length > 0) { const c = stack[stack.length - 1]; const n = []; const dirs = [{x:0,y:-2},{x:0,y:2},{x:-2,y:0},{x:2,y:0}]; dirs.forEach(d => { const nx=c.x+d.x; const ny=c.y+d.y; if(nx>0 && nx<cols-1 && ny>0 && ny<rows-1 && grid[ny][nx]===1) n.push({x:nx,y:ny,dx:d.x/2,dy:d.y/2}); }); if(n.length>0) { const next=n[Math.floor(Math.random()*n.length)]; grid[c.y+next.dy][c.x+next.dx]=0; grid[next.y][next.x]=0; stack.push({x:next.x,y:next.y}); } else { stack.pop(); } }
-                grid[0][1]=0; grid[1][1]=0; grid[rows-1][cols-2]=0; grid[rows-2][cols-2]=0;
-                let p = {x:1, y:0}; let shards = []; while(shards.length < 5) { let rx=Math.floor(Math.random()*cols); let ry=Math.floor(Math.random()*rows); if(grid[ry][rx]===0 && (ry>2||rx>2) && (ry<rows-2||rx<cols-2)) shards.push({x:rx,y:ry,c:false}); }
-                const move = (dx, dy) => { let nx=p.x+dx, ny=p.y+dy; if(nx>=0 && nx<cols && ny>=0 && ny<rows && grid[ny][nx]===0) { p.x=nx; p.y=ny; shards.forEach(s => { if(!s.c && s.x===p.x && s.y===p.y) { s.c=true; this.score++; document.getElementById('game-score').innerText=`${this.score}/5`; SFX.collect(); } }); if(this.score>=5 && ny===rows-1) this.stop(true); } };
-                window.onkeydown = (e) => { if(!this.active) return; if(e.key==="ArrowUp") move(0,-1); if(e.key==="ArrowDown") move(0,1); if(e.key==="ArrowLeft") move(-1,0); if(e.key==="ArrowRight") move(1,0); };
-                const bindBtn = (id, dx, dy) => { const b=document.getElementById(id); const a=(e)=>{if(e.cancelable)e.preventDefault();move(dx,dy);b.style.background='rgba(0,243,255,0.3)';}; const r=()=>{b.style.background='rgba(255,255,255,0.05)';}; b.ontouchstart=a; b.ontouchend=r; b.onmousedown=a; b.onmouseup=r; }; bindBtn('btn-up',0,-1); bindBtn('btn-down',0,1); bindBtn('btn-left',-1,0); bindBtn('btn-right',1,0);
-                const draw = () => { this.ctx.fillStyle = '#000'; this.ctx.fillRect(0,0,this.canvas.width,this.canvas.height); for(let y=0; y<rows; y++) { for(let x=0; x<cols; x++) { const dist = Math.hypot(x-p.x, y-p.y); const vis = Math.max(0, 1-dist/5.5); if(vis>0) { if(grid[y][x]===1) { this.ctx.fillStyle=`rgba(40,40,40,${vis})`; this.ctx.fillRect(x*cw,y*ch,cw+1,ch+1); this.ctx.strokeStyle=`rgba(0,243,255,${vis*0.2})`; this.ctx.strokeRect(x*cw,y*ch,cw,ch); } else { this.ctx.fillStyle=`rgba(20,20,30,${vis*0.5})`; this.ctx.fillRect(x*cw,y*ch,cw,ch); } } }} shards.forEach(s => { if(!s.c && Math.hypot(s.x-p.x,s.y-p.y)<5.5) { this.ctx.fillStyle='#00f3ff'; this.ctx.shadowBlur=10; this.ctx.shadowColor='#00f3ff'; this.ctx.beginPath(); this.ctx.arc(s.x*cw+cw/2,s.y*ch+ch/2,cw/3,0,Math.PI*2); this.ctx.fill(); this.ctx.shadowBlur=0; } }); if(this.score>=5) { this.ctx.fillStyle='#00ff00'; this.ctx.shadowBlur=15; this.ctx.shadowColor='#00ff00'; this.ctx.fillRect((cols-2)*cw,(rows-1)*ch,cw,ch); this.ctx.shadowBlur=0; } this.ctx.fillStyle='#ff003c'; this.ctx.shadowBlur=10; this.ctx.shadowColor='#ff003c'; this.ctx.beginPath(); this.ctx.arc(p.x*cw+cw/2,p.y*ch+ch/2,cw/2.5,0,Math.PI*2); this.ctx.fill(); this.ctx.shadowBlur=0; if(this.active && this.currentGame===1) requestAnimationFrame(draw); }; draw();
-            },
-            startDefense: function() {
-                const cx = this.canvas.width/2; const cy = this.canvas.height/2; let angle = 0; let enemies = []; let lastSpawn = 0; let health = 100;
-                const updateAngle = (cX, cY) => { const r=this.canvas.getBoundingClientRect(); angle=Math.atan2(cY-r.top-cy, cX-r.left-cx); };
-                const bindMove = (e) => { e.preventDefault(); const t=e.touches?e.touches[0]:e; updateAngle(t.clientX, t.clientY); };
-                this.canvas.onmousemove = bindMove; this.canvas.ontouchmove = bindMove; this.canvas.ontouchstart = bindMove;
-                const loop = (ts) => {
-                    if(!this.active || this.currentGame !== 2) return;
-                    if(helpSystem.active) { requestAnimationFrame(loop); return; }
-                    if(ts - lastSpawn > 1000) { const a = Math.random()*Math.PI*2; const r = Math.max(this.canvas.width,this.canvas.height)/1.4; enemies.push({x:cx+Math.cos(a)*r, y:cy+Math.sin(a)*r, vx:-Math.cos(a)*1.0, vy:-Math.sin(a)*1.0, d:false}); lastSpawn = ts; }
-                    this.ctx.fillStyle='rgba(0,0,0,0.2)'; this.ctx.fillRect(0,0,this.canvas.width,this.canvas.height);
-                    this.ctx.strokeStyle='#00f3ff'; this.ctx.lineWidth=6; this.ctx.beginPath(); this.ctx.arc(cx,cy,50,angle-0.7,angle+0.7); this.ctx.stroke(); this.ctx.fillStyle='#ff003c'; this.ctx.beginPath(); this.ctx.arc(cx,cy,15,0,Math.PI*2); this.ctx.fill();
-                    enemies.forEach(e => { if(e.d) return; e.x+=e.vx; e.y+=e.vy; this.ctx.fillStyle='#fff'; this.ctx.beginPath(); this.ctx.arc(e.x,e.y,4,0,Math.PI*2); this.ctx.fill(); const d = Math.hypot(e.x-cx,e.y-cy); if(d<55 && d>45) { let diff = Math.abs(Math.atan2(e.y-cy,e.x-cx) - angle); if(diff>Math.PI) diff=Math.PI*2-diff; if(diff<0.7) { e.d=true; this.score+=50; document.getElementById('game-score').innerText=this.score; SFX.shoot(); } } if(d<20) { e.d=true; health-=20; SFX.hit(); this.canvas.style.transform=`translate(${Math.random()*10-5}px,${Math.random()*10-5}px)`; setTimeout(()=>this.canvas.style.transform='none',50); } });
-                    this.ctx.fillStyle='#333'; this.ctx.fillRect(cx-30,cy+70,60,6); this.ctx.fillStyle=health>30?'#00ff00':'#f00'; this.ctx.fillRect(cx-30,cy+70,health*0.6,6);
-                    if(health<=0) { this.active=false; document.getElementById('game-score').innerText="FAIL"; setTimeout(()=>this.stop(false),1500); } else if(this.score>=500) this.stop(true); else requestAnimationFrame(loop);
-                }; loop(0);
-            },
-            startTyper: function() {
-                const words = ["LOVE", "HOPE", "AMIT", "CHARVI", "KISS", "SOUL", "FOREVER", "TRUST", "DREAM", "HEART"]; let enemies = []; let lastSpawn = 0; let buffer = "";
-                const input = document.getElementById('hidden-keyboard-input'); const display = document.getElementById('player-typed'); const trigger = document.getElementById('keyboard-trigger');
-                input.value = ""; input.focus(); trigger.onclick = () => { input.focus(); };
-                input.oninput = () => { const val = input.value; if(val.length>0) { this.processKey(val[val.length-1].toUpperCase(), buffer, enemies, (n)=>{buffer=n; display.innerText=buffer;}); input.value=""; } };
-                window.onkeydown = (e) => { if(e.key.length===1 && /[a-zA-Z]/.test(e.key)) { this.processKey(e.key.toUpperCase(), buffer, enemies, (n)=>{buffer=n; display.innerText=buffer;}); input.focus(); } };
-                const loop = (ts) => {
-                    if(!this.active || this.currentGame !== 3) return;
-                    if(helpSystem.active) { requestAnimationFrame(loop); return; }
-                    if(ts-lastSpawn > 2200) { enemies.push({ text: words[Math.floor(Math.random()*words.length)], x: Math.random()*(this.canvas.width-60)+30, y: -20 }); lastSpawn = ts; }
-                    this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height); this.ctx.font="bold 20px monospace";
-                    enemies.forEach(e => { e.y+=0.4; if(buffer.length>0 && e.text.startsWith(buffer)) { this.ctx.fillStyle='#00f3ff'; this.ctx.fillText(e.text.substring(0,buffer.length),e.x,e.y); this.ctx.fillStyle='#fff'; this.ctx.fillText(e.text.substring(buffer.length),e.x+this.ctx.measureText(e.text.substring(0,buffer.length)).width,e.y); this.ctx.strokeStyle='#ff003c'; this.ctx.beginPath(); this.ctx.moveTo(this.canvas.width/2,this.canvas.height); this.ctx.lineTo(e.x,e.y); this.ctx.stroke(); } else { this.ctx.fillStyle='#fff'; this.ctx.fillText(e.text,e.x,e.y); } if(e.y>this.canvas.height) { SFX.hit(); this.active=false; document.getElementById('game-score').innerText="FAIL"; setTimeout(()=>this.stop(false),1500); } });
-                    if(this.active) requestAnimationFrame(loop);
-                }; loop(0);
-            },
-            processKey: function(char, buffer, enemies, updateBuff) {
-                const next = buffer + char; let match = false; let exact = -1;
-                enemies.forEach((e, i) => { if(e.text.startsWith(next)) { match=true; if(e.text===next) exact=i; } });
-                if(match) { SFX.shoot(); updateBuff(next); if(exact!==-1) { enemies.splice(exact,1); this.score++; document.getElementById('game-score').innerText=`${this.score}/8`; updateBuff(""); SFX.hit(); if(this.score>=8) this.stop(true); } } else { SFX.play(100,'sawtooth',0.1); updateBuff(""); }
+            
+            completeGame: function() {
+                document.getElementById('amit-help-modal').style.display = 'none';
+                this.active = false;
+                gameManager.stop(true);
             }
         };
 
-        let heartSystem = null;
-        const init3D = () => {
-            const container = document.getElementById('canvas-container'); const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 2000); camera.position.z = 40;
-            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true }); renderer.setSize(window.innerWidth, window.innerHeight); container.appendChild(renderer.domElement);
-            const geo = new THREE.BufferGeometry(); const pos = []; const col = []; const c1 = new THREE.Color('#ff003c'); const c2 = new THREE.Color('#00f3ff');
-            for(let i=0; i<4000; i++) { const t=Math.random()*Math.PI*2; let x=16*Math.pow(Math.sin(t),3); let y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t); const s=Math.sqrt(Math.random()); x*=s; y*=s; let z=(Math.random()-0.5)*15*s; pos.push(x,y,z); const c=Math.random()>0.5?c1:c2; col.push(c.r,c.g,c.b); }
-            geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(col,3));
-            heartSystem = new THREE.Points(geo, new THREE.PointsMaterial({size:0.2, vertexColors:true, transparent:true, opacity:0.6, blending:THREE.AdditiveBlending})); scene.add(heartSystem);
-            const sGeo = new THREE.BufferGeometry(); const sPos = []; for(let i=0; i<2000; i++) { sPos.push((Math.random()-0.5)*400, (Math.random()-0.5)*400, (Math.random()-0.5)*400); } sGeo.setAttribute('position', new THREE.Float32BufferAttribute(sPos,3)); const stars = new THREE.Points(sGeo, new THREE.PointsMaterial({color:0xffffff, size:0.5})); scene.add(stars);
-            const animate = () => { requestAnimationFrame(animate); if(heartSystem) heartSystem.rotation.y+=0.002; renderer.render(scene, camera); }; animate();
-            window.camera3D = camera; window.heartSys = heartSystem; window.starSys = stars; window.addEventListener('resize', () => { camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight); });
+        /**
+         * Core Game Engine
+         * Manages logic for Labyrinth, Guardian, and Lexicon modules.
+         */
+        const gameManager = {
+            active: false, canvas: null, ctx: null, loopId: null, currentGame: 0, score: 0, completed: [false, false, false],
+            
+            init: function() {
+                this.canvas = document.getElementById('active-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+            },
+
+            resize: function() {
+                if(this.canvas) {
+                    const maxWidth = Math.min(window.innerWidth - 32, 800);
+                    const maxHeight = window.innerHeight < 600 ? window.innerHeight * 0.55 : 500;
+                    this.canvas.width = maxWidth;
+                    this.canvas.height = maxHeight;
+                }
+            },
+
+            start: function(id) {
+                if(this.completed[id-1]) return; // Prevent replay if done
+                
+                this.active = true;
+                this.currentGame = id;
+                this.score = 0;
+                document.getElementById('game-overlay').style.display = 'flex';
+                document.getElementById('game-score').innerText = "0000";
+                
+                // Reset UI Visibility
+                document.getElementById('d-pad').style.display = 'none';
+                document.getElementById('typing-ui').style.display = 'none';
+                document.getElementById('help-btn').style.display = 'none';
+                
+                const title = document.getElementById('game-title');
+                const instr = document.getElementById('game-instruction');
+                
+                this.resize();
+
+                if(id === 1) {
+                    title.innerText = "LABYRINTH";
+                    instr.innerText = "FIND 5 BLUE SHARDS. EXIT AT GREEN.";
+                    if(window.innerWidth < 800) document.getElementById('d-pad').style.display = 'grid';
+                    this.startMaze();
+                } else if(id === 2) {
+                    title.innerText = "GUARDIAN";
+                    instr.innerText = "DRAG TO ROTATE SHIELD. BLOCK RED.";
+                    document.getElementById('help-btn').style.display = 'block';
+                    this.startDefense();
+                } else if(id === 3) {
+                    title.innerText = "LEXICON";
+                    instr.innerText = "TYPE FALLING WORDS.";
+                    document.getElementById('typing-ui').style.display = 'block';
+                    document.getElementById('help-btn').style.display = 'block';
+                    this.startTyper();
+                }
+            },
+
+            stop: function(won = false) {
+                this.active = false;
+                cancelAnimationFrame(this.loopId);
+                document.getElementById('game-overlay').style.display = 'none';
+                document.getElementById('hidden-keyboard-input').blur();
+                document.getElementById('amit-help-modal').style.display = 'none';
+                
+                if(won) {
+                    this.completed[this.currentGame-1] = true;
+                    const badge = document.querySelector(`.status-g${this.currentGame}`);
+                    badge.innerText = "COMPLETE";
+                    badge.style.color = "#00ff00";
+                    badge.style.borderColor = "#00ff00";
+                    SFX.win();
+                    this.checkAllComplete();
+                }
+            },
+
+            checkAllComplete: function() {
+                let c = 0; this.completed.forEach(x => { if(x) c++; });
+                document.getElementById('sync-percent').innerText = Math.floor((c/3)*100) + "%";
+                if(c === 3) {
+                    const btn = document.getElementById('accept-btn');
+                    const deny = document.getElementById('deny-btn');
+                    const lock = document.getElementById('lock-message');
+                    lock.style.display = 'none';
+                    btn.style.opacity = 1;
+                    btn.style.pointerEvents = 'all';
+                    deny.style.opacity = 0;
+                    deny.style.pointerEvents = 'none';
+                }
+            },
+
+            // --- GAME 1: MAZE (Recursive Backtracker) ---
+            startMaze: function() {
+                const cols = 15, rows = 15;
+                const cw = this.canvas.width / cols;
+                const ch = this.canvas.height / rows;
+                
+                // Initialize Wall Grid
+                let grid = []; for(let y=0; y<rows; y++) { let r=[]; for(let x=0; x<cols; x++) r.push(1); grid.push(r); }
+                
+                // Maze Generation
+                const stack = []; const start = {x: 1, y: 1}; grid[start.y][start.x] = 0; stack.push(start);
+                while(stack.length > 0) {
+                    const c = stack[stack.length - 1];
+                    const n = [];
+                    const dirs = [{x:0,y:-2},{x:0,y:2},{x:-2,y:0},{x:2,y:0}];
+                    dirs.forEach(d => { const nx=c.x+d.x, ny=c.y+d.y; if(nx>0 && nx<cols-1 && ny>0 && ny<rows-1 && grid[ny][nx]===1) n.push({x:nx,y:ny,dx:d.x/2,dy:d.y/2}); });
+                    if(n.length > 0) {
+                        const nx = n[Math.floor(Math.random()*n.length)];
+                        grid[c.y+nx.dy][c.x+nx.dx] = 0; grid[nx.y][nx.x] = 0;
+                        stack.push({x:nx.x,y:nx.y});
+                    } else { stack.pop(); }
+                }
+                // Open Entrances/Exits
+                grid[0][1]=0; grid[1][1]=0; grid[rows-1][cols-2]=0; grid[rows-2][cols-2]=0;
+
+                let p = {x:1, y:0}; 
+                let shards = []; 
+                while(shards.length < 5) { 
+                    let rx=Math.floor(Math.random()*cols), ry=Math.floor(Math.random()*rows); 
+                    if(grid[ry][rx]===0 && (ry>2||rx>2) && (ry<rows-2||rx<cols-2)) shards.push({x:rx,y:ry,c:false}); 
+                }
+
+                const move = (dx, dy) => {
+                    let nx=p.x+dx, ny=p.y+dy;
+                    if(nx>=0 && nx<cols && ny>=0 && ny<rows && grid[ny][nx]===0) {
+                        p.x=nx; p.y=ny;
+                        shards.forEach(s => { if(!s.c && s.x===p.x && s.y===p.y) { s.c=true; this.score++; document.getElementById('game-score').innerText=`${this.score}/5`; SFX.collect(); } });
+                        if(this.score>=5 && ny===rows-1) this.stop(true);
+                    }
+                };
+
+                window.onkeydown = (e) => { if(!this.active) return; if(e.key==="ArrowUp") move(0,-1); if(e.key==="ArrowDown") move(0,1); if(e.key==="ArrowLeft") move(-1,0); if(e.key==="ArrowRight") move(1,0); };
+                
+                // D-Pad Binding
+                const bindBtn = (id, dx, dy) => {
+                    const b = document.getElementById(id);
+                    const a = (e) => { if(e.cancelable) e.preventDefault(); move(dx, dy); b.style.background='rgba(0,243,255,0.3)'; };
+                    const r = () => { b.style.background='rgba(255,255,255,0.05)'; };
+                    b.ontouchstart=a; b.ontouchend=r; b.onmousedown=a; b.onmouseup=r;
+                };
+                bindBtn('btn-up',0,-1); bindBtn('btn-down',0,1); bindBtn('btn-left',-1,0); bindBtn('btn-right',1,0);
+
+                const draw = () => {
+                    this.ctx.fillStyle = '#000'; this.ctx.fillRect(0,0,this.canvas.width,this.canvas.height);
+                    // Fog of War Rendering
+                    for(let y=0; y<rows; y++) {
+                        for(let x=0; x<cols; x++) {
+                            const dist = Math.hypot(x-p.x, y-p.y); const vis = Math.max(0, 1-dist/5.5);
+                            if(vis>0) {
+                                if(grid[y][x]===1) { this.ctx.fillStyle=`rgba(40,40,40,${vis})`; this.ctx.fillRect(x*cw,y*ch,cw+1,ch+1); this.ctx.strokeStyle=`rgba(0,243,255,${vis*0.2})`; this.ctx.strokeRect(x*cw,y*ch,cw,ch); }
+                                else { this.ctx.fillStyle=`rgba(20,20,30,${vis*0.5})`; this.ctx.fillRect(x*cw,y*ch,cw,ch); }
+                            }
+                        }
+                    }
+                    shards.forEach(s => { if(!s.c && Math.hypot(s.x-p.x,s.y-p.y)<5.5) { this.ctx.fillStyle='#00f3ff'; this.ctx.shadowBlur=10; this.ctx.shadowColor='#00f3ff'; this.ctx.beginPath(); this.ctx.arc(s.x*cw+cw/2,s.y*ch+ch/2,cw/3,0,Math.PI*2); this.ctx.fill(); this.ctx.shadowBlur=0; } });
+                    if(this.score>=5) { this.ctx.fillStyle='#00ff00'; this.ctx.shadowBlur=15; this.ctx.shadowColor='#00ff00'; this.ctx.fillRect((cols-2)*cw,(rows-1)*ch,cw,ch); this.ctx.shadowBlur=0; }
+                    this.ctx.fillStyle='#ff003c'; this.ctx.shadowBlur=10; this.ctx.shadowColor='#ff003c'; this.ctx.beginPath(); this.ctx.arc(p.x*cw+cw/2,p.y*ch+ch/2,cw/2.5,0,Math.PI*2); this.ctx.fill(); this.ctx.shadowBlur=0;
+                    if(this.active && this.currentGame===1) requestAnimationFrame(draw);
+                };
+                draw();
+            },
+
+            // --- GAME 2: GUARDIAN ---
+            startDefense: function() {
+                const cx = this.canvas.width/2; const cy = this.canvas.height/2;
+                let angle = 0; let enemies = []; let lastSpawn = 0; let health = 100;
+                
+                const updateAngle = (cX, cY) => { const r=this.canvas.getBoundingClientRect(); angle=Math.atan2(cY-r.top-cy, cX-r.left-cx); };
+                const bindMove = (e) => { e.preventDefault(); const t=e.touches?e.touches[0]:e; updateAngle(t.clientX, t.clientY); };
+                this.canvas.onmousemove = bindMove; this.canvas.ontouchmove = bindMove; this.canvas.ontouchstart = bindMove;
+
+                const loop = (ts) => {
+                    if(!this.active || this.currentGame !== 2) return;
+                    if(helpSystem.active) { requestAnimationFrame(loop); return; } // Pause if help active
+                    
+                    if(ts - lastSpawn > 1000) {
+                        const a = Math.random()*Math.PI*2; const r = Math.max(this.canvas.width,this.canvas.height)/1.4;
+                        enemies.push({x:cx+Math.cos(a)*r, y:cy+Math.sin(a)*r, vx:-Math.cos(a)*1.0, vy:-Math.sin(a)*1.0, d:false});
+                        lastSpawn = ts;
+                    }
+                    
+                    this.ctx.fillStyle='rgba(0,0,0,0.2)'; this.ctx.fillRect(0,0,this.canvas.width,this.canvas.height);
+                    this.ctx.strokeStyle='#00f3ff'; this.ctx.lineWidth=6; this.ctx.beginPath(); this.ctx.arc(cx,cy,50,angle-0.7,angle+0.7); this.ctx.stroke();
+                    this.ctx.fillStyle='#ff003c'; this.ctx.beginPath(); this.ctx.arc(cx,cy,15,0,Math.PI*2); this.ctx.fill();
+
+                    enemies.forEach(e => {
+                        if(e.d) return; e.x+=e.vx; e.y+=e.vy;
+                        this.ctx.fillStyle='#fff'; this.ctx.beginPath(); this.ctx.arc(e.x,e.y,4,0,Math.PI*2); this.ctx.fill();
+                        const d = Math.hypot(e.x-cx,e.y-cy);
+                        if(d<55 && d>45) {
+                            let diff = Math.abs(Math.atan2(e.y-cy,e.x-cx) - angle);
+                            if(diff>Math.PI) diff=Math.PI*2-diff;
+                            if(diff<0.7) { e.d=true; this.score+=50; document.getElementById('game-score').innerText=this.score; SFX.shoot(); }
+                        }
+                        if(d<20) { e.d=true; health-=20; SFX.hit(); this.canvas.style.transform=`translate(${Math.random()*10-5}px,${Math.random()*10-5}px)`; setTimeout(()=>this.canvas.style.transform='none',50); }
+                    });
+
+                    this.ctx.fillStyle='#333'; this.ctx.fillRect(cx-30,cy+70,60,6);
+                    this.ctx.fillStyle=health>30?'#00ff00':'#f00'; this.ctx.fillRect(cx-30,cy+70,health*0.6,6);
+
+                    if(health<=0) { this.active=false; document.getElementById('game-score').innerText="FAIL"; setTimeout(()=>this.stop(false),1500); }
+                    else if(this.score>=500) this.stop(true);
+                    else requestAnimationFrame(loop);
+                };
+                loop(0);
+            },
+
+            // --- GAME 3: LEXICON ---
+            startTyper: function() {
+                const words = ["LOVE", "HOPE", "AMIT", "CHARVI", "KISS", "SOUL", "FOREVER", "TRUST", "DREAM", "HEART"];
+                let enemies = []; let lastSpawn = 0; let buffer = "";
+                
+                const input = document.getElementById('hidden-keyboard-input');
+                const display = document.getElementById('player-typed');
+                const trigger = document.getElementById('keyboard-trigger');
+                
+                input.value = ""; input.focus(); trigger.onclick = () => { input.focus(); };
+                input.oninput = (e) => {
+                    const val = e.target.value;
+                    if(val) {
+                        const c = val[val.length-1].toUpperCase();
+                        let match = false;
+                        enemies.forEach((z,i)=>{
+                            if(z.t.startsWith(buffer+c)) {
+                                match = true;
+                                if(z.t===buffer+c) {
+                                    enemies.splice(i,1); this.score++; document.getElementById('game-score').innerText=`${this.score}/8`;
+                                    buffer=""; SFX.hit(); if(this.score>=8) this.stop(true);
+                                }
+                            }
+                        });
+                        if(match) { buffer+=c; SFX.shoot(); document.getElementById('player-typed').innerText=buffer; }
+                        else { buffer=""; SFX.play(100,'sawtooth',0.1); }
+                        e.target.value="";
+                    }
+                };
+                window.onkeydown = (e) => { if(e.key.length===1 && /[a-zA-Z]/.test(e.key)) { this.processKey(e.key.toUpperCase(), buffer, enemies, (n)=>{buffer=n; display.innerText=buffer;}); input.focus(); } };
+
+                const loop = (ts) => {
+                    if(!this.active || this.currentGame !== 3) return;
+                    if(helpSystem.active) { requestAnimationFrame(loop); return; }
+                    
+                    if(ts-lastSpawn > 2200) {
+                        enemies.push({ text: words[Math.floor(Math.random()*words.length)], x: Math.random()*(this.canvas.width-50)+25, y: -20 });
+                        lastSpawn = ts;
+                    }
+                    
+                    this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+                    this.ctx.font="bold 20px monospace";
+                    
+                    enemies.forEach(e => {
+                        e.y+=0.4;
+                        if(buffer && e.text.startsWith(buffer)) {
+                            this.ctx.fillStyle='#00f3ff'; this.ctx.fillText(e.text.substring(0,buffer.length),e.x,e.y);
+                            this.ctx.fillStyle='#fff'; this.ctx.fillText(e.text.substring(buffer.length),e.x+this.ctx.measureText(e.text.substring(0,buffer.length)).width,e.y);
+                            this.ctx.strokeStyle='#ff003c'; this.ctx.beginPath(); this.ctx.moveTo(this.canvas.width/2,this.canvas.height); this.ctx.lineTo(e.x,e.y); this.ctx.stroke();
+                        } else {
+                            this.ctx.fillStyle='#fff'; this.ctx.fillText(e.text,e.x,e.y);
+                        }
+                        if(e.y > this.canvas.height) { SFX.hit(); this.active=false; document.getElementById('game-score').innerText="FAIL"; setTimeout(()=>this.stop(false),1500); }
+                    });
+                    if(this.active) requestAnimationFrame(loop);
+                };
+                loop(0);
+            },
+            
+            processKey: function(char, buffer, enemies, updateBuff) {
+                const next = buffer + char; let match = false; let exact = -1;
+                enemies.forEach((e, i) => { if(e.text.startsWith(next)) { match=true; if(e.text===next) exact=i; } });
+                if(match) {
+                    SFX.shoot(); updateBuff(next);
+                    if(exact!==-1) { enemies.splice(exact,1); this.score++; document.getElementById('game-score').innerText=`${this.score}/8`; updateBuff(""); SFX.hit(); if(this.score>=8) this.stop(true); }
+                } else { SFX.play(100,'sawtooth',0.1); updateBuff(""); }
+            }
         };
 
+        /* --- VISUAL ENGINE (Three.js) --- */
+        let heartSystem, starSystem;
+        const init3D = () => {
+            const container = document.getElementById('canvas-container');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 2000);
+            camera.position.z = 40;
+            
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+            
+            // Heart Particle System
+            const geo = new THREE.BufferGeometry(); const pos = []; const col = [];
+            const c1 = new THREE.Color('#ff003c'); const c2 = new THREE.Color('#00f3ff');
+            for(let i=0; i<4000; i++) {
+                const t=Math.random()*Math.PI*2; let x=16*Math.pow(Math.sin(t),3); let y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
+                const s=Math.sqrt(Math.random()); x*=s; y*=s; let z=(Math.random()-0.5)*15*s;
+                pos.push(x,y,z); const c=Math.random()>0.5?c1:c2; col.push(c.r,c.g,c.b);
+            }
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+            geo.setAttribute('color', new THREE.Float32BufferAttribute(col,3));
+            heartSystem = new THREE.Points(geo, new THREE.PointsMaterial({size:0.2, vertexColors:true, transparent:true, opacity:0.6, blending:THREE.AdditiveBlending}));
+            scene.add(heartSystem);
+            
+            // Starfield
+            const sGeo = new THREE.BufferGeometry(); const sPos = [];
+            for(let i=0; i<2000; i++) sPos.push((Math.random()-0.5)*400, (Math.random()-0.5)*400, (Math.random()-0.5)*400);
+            sGeo.setAttribute('position', new THREE.Float32BufferAttribute(sPos,3));
+            starSystem = new THREE.Points(sGeo, new THREE.PointsMaterial({color:0xffffff, size:0.5}));
+            scene.add(starSystem);
+
+            const animate = () => { requestAnimationFrame(animate); if(heartSystem) heartSystem.rotation.y+=0.002; renderer.render(scene, camera); };
+            animate();
+            
+            window.camera3D = camera; window.heart3D = heartSystem; window.star3D = starSystem;
+            window.addEventListener('resize', () => { camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight); });
+        };
+
+        // Dedicated Bulb Scene for Finale
+        const initBulb = () => {
+            const cv = document.getElementById('bulb-canvas');
+            const ren = new THREE.WebGLRenderer({canvas:cv, alpha:true, antialias:true});
+            ren.setSize(window.innerWidth, window.innerHeight);
+            const sc = new THREE.Scene();
+            const cam = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 100);
+            cam.position.z = 15; cam.position.y = -5;
+
+            const pivot = new THREE.Group(); pivot.position.y = 10; sc.add(pivot);
+            const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 10, 8), new THREE.MeshBasicMaterial({color: 0x333333})); wire.position.y = -5; pivot.add(wire);
+            const base = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1, 32), new THREE.MeshStandardMaterial({color: 0x888888, metalness: 0.8, roughness: 0.2})); base.position.y = -10.5; pivot.add(base);
+            const glassM = new THREE.MeshStandardMaterial({color: 0xffff00, emissive: 0xffaa00, emissiveIntensity: 0.5, transparent: true, opacity: 0.4});
+            const glass = new THREE.Mesh(new THREE.SphereGeometry(1.5, 32, 32), glassM); glass.position.y = -12; pivot.add(glass);
+            const light = new THREE.PointLight(0xffaa00, 1, 50); light.position.y = -12; pivot.add(light);
+            
+            sc.add(new THREE.AmbientLight(0xffffff, 0.2)); 
+            const dir = new THREE.DirectionalLight(0xffffff, 0.5); dir.position.set(0, 0, 10); sc.add(dir);
+
+            let time = 0;
+            const animateBulb = () => {
+                requestAnimationFrame(animateBulb); time += 0.05; pivot.rotation.z = Math.sin(time * 0.5) * 0.3;
+                // Flicker logic
+                if(window.isFlickering) { const f = Math.random() > 0.7 ? 2 : 0.1; glassM.emissiveIntensity = f; light.intensity = f * 2; } 
+                else { glassM.emissiveIntensity = 0.5; light.intensity = 1; }
+                ren.render(sc, cam);
+            };
+            animateBulb();
+        };
+
+        /* --- APP LIFECYCLE --- */
+        
+        // 1. Initialize System
         document.getElementById('init-screen').onclick = () => {
-            SFX.init(); gameManager.init(); document.getElementById('init-screen').style.display='none'; document.getElementById('loader').style.display='flex';
+            SFX.init(); gameManager.init();
+            document.getElementById('init-screen').style.display='none';
+            document.getElementById('loader').style.display='flex';
+            
+            // Loading Bar Animation
             gsap.to('#loader-bar', { width: '100%', duration: 2, ease: 'power2.inOut', onComplete: () => {
                 document.getElementById('loader').style.display='none'; 
                 const main = document.getElementById('main-ui'); main.style.display = 'block'; init3D();
                 
-                // CINEMATIC BOOT SEQUENCE - Reveal everything sequentially
+                // Cinematic Cascade Sequence
                 const tl = gsap.timeline();
                 tl.to(main, { opacity: 1, duration: 0.1 })
-                  .to('.boot-elem', { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, stagger: 0.2, ease: "power2.out" });
+                  .to('.boot-elem', { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, stagger: 0.15, ease: "power2.out" });
+                
+                // Spin up stats
+                const ctr = document.getElementById('bpm-counter');
+                gsap.to(ctr, { innerHTML: 142, duration: 3, snap: { innerHTML: 1 }, ease: "power2.out" });
             }});
         };
 
+        // 2. Chat Rigging
         const chatInput = document.getElementById('rigged-input');
-        chatInput.addEventListener('input', () => { SFX.play(800, 'square', 0.05); if (chatInput.value.length > 0) { chatInput.value = "I admit it. Amit loves me more.".substring(0, chatInput.value.length); document.getElementById('input-error').style.opacity = 1; chatInput.style.color = '#ff003c'; chatInput.style.borderColor = '#ff003c'; } });
-        const deny = document.getElementById('deny-btn'); let tries = 0; const runAway = (e) => { if(tries>5) return; e.preventDefault(); tries++; SFX.play(200,'sawtooth',0.1); const x=(Math.random()-0.5)*150; const y=(Math.random()-0.5)*150; deny.style.transform=`translate(${x}px,${y}px)`; }; deny.onmouseover = runAway; deny.ontouchstart = runAway;
+        chatInput.addEventListener('input', () => {
+            SFX.play(800, 'square', 0.05);
+            if (chatInput.value.length > 0) {
+                chatInput.value = "I admit it. Amit loves me more.".substring(0, chatInput.value.length);
+                document.getElementById('input-error').style.opacity = 1;
+                chatInput.style.color = '#ff003c'; chatInput.style.borderColor = '#ff003c';
+            }
+        });
 
+        // 3. Deny Button Logic (Runaway 5 times)
+        const deny = document.getElementById('deny-btn'); 
+        let denyAttempts = 0; 
+        
+        const runAway = (e) => {
+            if(denyAttempts >= 5) return; // Stop moving
+            e.preventDefault();
+            denyAttempts++;
+            SFX.play(200, 'sawtooth', 0.1);
+            const x = (Math.random()-0.5)*150;
+            const y = (Math.random()-0.5)*150;
+            deny.style.transform = `translate(${x}px, ${y}px)`;
+        };
+        deny.onmouseover = runAway; 
+        deny.ontouchstart = runAway;
+
+        deny.onclick = (e) => {
+            if(denyAttempts >= 5) {
+                e.preventDefault();
+                SFX.error();
+                deny.style.backgroundColor = '#ff0000';
+                deny.innerText = "ERROR";
+                setTimeout(() => {
+                    deny.style.backgroundColor = 'rgba(17, 24, 39, 0.8)';
+                    deny.innerText = "DENY";
+                }, 500);
+            }
+        };
+
+        // 4. The Finale Sequence
         document.getElementById('accept-btn').onclick = () => {
-            discordUtil.send("🚨 SYSTEM ALERT: CHARVI HAS ACCEPTED THE TRUTH! ❤️"); SFX.rumble(); document.body.classList.add('animate-shake');
+            // Notify Amit
+            discordUtil.send("🚨 CHARVI ACCEPTED! ❤️");
+            
+            SFX.rumble();
+            document.body.classList.add('animate-shake');
+            
+            // Fade out UI
             gsap.to('#main-ui', {opacity:0, duration:1, pointerEvents:'none'});
-            if(window.camera3D && window.starSys && window.heartSys) { gsap.to(window.heartSys.scale, {x:0.01, y:0.01, z:0.01, duration:2, ease:"back.in(2)"}); gsap.to(window.starSys.scale, {z: 5, duration: 2}); gsap.to(window.camera3D.position, {z: 5, duration: 2.5, ease:"expo.in"}); }
+            
+            // Warp Speed Effect
+            gsap.to(window.heart3D.scale, {x:0.01, y:0.01, z:0.01, duration:2, ease:"back.in(2)"});
+            gsap.to(window.star3D.scale, {z: 5, duration: 2});
+            gsap.to(window.camera3D.position, {z: 5, duration: 2.5, ease:"expo.in"});
+            
             setTimeout(() => {
-                const fin = document.getElementById('finale-overlay'); fin.style.display='flex'; fin.style.pointerEvents='auto';
-                const canvas = document.getElementById('finale-canvas'); const ctx = canvas.getContext('2d'); canvas.width=window.innerWidth; canvas.height=window.innerHeight;
-                let parts = []; for(let i=0; i<800; i++) { const a=Math.random()*Math.PI*2; const v=Math.random()*30+5; const c = Math.random()>0.6 ? '#ff003c' : (Math.random()>0.5 ? '#00f3ff' : '#ffd700'); parts.push({x:canvas.width/2, y:canvas.height/2, vx:Math.cos(a)*v, vy:Math.sin(a)*v, c:c, s:Math.random()*4}); }
-                const drawFin = () => { ctx.fillStyle='rgba(0,0,0,0.2)'; ctx.fillRect(0,0,canvas.width,canvas.height); parts.forEach(p=>{p.x+=p.vx; p.y+=p.vy; p.vx *= 0.95; p.vy *= 0.95; ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(p.x,p.y,p.s,0,Math.PI*2); ctx.fill();}); requestAnimationFrame(drawFin); };
-                const flash = document.getElementById('white-flash'); gsap.to(flash, {opacity: 1, duration: 0.1, yoyo: true, repeat: 1}); drawFin(); gsap.to(fin, {opacity:1, duration:0.1});
+                const fin = document.getElementById('finale-overlay');
+                fin.style.display='flex'; fin.style.pointerEvents='auto';
+                initBulb();
+                
+                // Particle Explosion
+                const cv = document.getElementById('finale-canvas'); const cx = cv.getContext('2d');
+                cv.width = window.innerWidth; cv.height = window.innerHeight;
+                let ps=[]; for(let i=0; i<800; i++) {
+                    const a=Math.random()*6.28, v=Math.random()*30+5, c=Math.random()>0.6?'#ff003c':(Math.random()>0.5?'#00f3ff':'#ffd700');
+                    ps.push({x:cv.width/2, y:cv.height/2, vx:Math.cos(a)*v, vy:Math.sin(a)*v, c:c});
+                }
+                
+                // Shockwave Animation
+                let sw=0;
+                const draw = () => {
+                    cx.fillStyle='rgba(0,0,0,0.2)'; cx.fillRect(0,0,cv.width,cv.height);
+                    if(sw < cv.width*1.5) {
+                        sw += 20;
+                        cx.strokeStyle=`rgba(255,255,255,${1-sw/(cv.width*1.5)})`; cx.lineWidth=20;
+                        cx.beginPath(); cx.arc(cv.width/2, cv.height/2, sw, 0, 6.28); cx.stroke();
+                    }
+                    ps.forEach(p => {
+                        p.x+=p.vx; p.y+=p.vy; p.vx*=0.95; p.vy*=0.95;
+                        cx.fillStyle=p.c; cx.beginPath(); cx.arc(p.x,p.y,Math.random()*4,0,6.28); cx.fill();
+                    });
+                    requestAnimationFrame(draw);
+                };
+                
+                gsap.to('#white-flash', {opacity: 1, duration: 0.1, yoyo: true, repeat: 1});
+                draw();
+                gsap.to(fin, {opacity:1, duration:0.1});
+                
                 setTimeout(() => {
                     document.body.classList.remove('animate-shake');
                     const txt = document.getElementById('finale-text');
+                    
+                    // Reveal Text + Glitch + Crack
                     txt.style.opacity=1; txt.style.transform='scale(1)'; txt.style.filter='blur(0)'; txt.classList.add('glitch-text');
-                    document.getElementById('crack-overlay').style.display = 'block';
+                    document.getElementById('crack-overlay').style.display='block';
                     SFX.slam();
-                    let flickers = 0; const flickerInterval = setInterval(() => { SFX.spark(); flickers++; if(flickers > 10) clearInterval(flickerInterval); }, 100);
+                    
+                    // Lightbulb Flicker Audio Loop
+                    window.isFlickering = true;
+                    let f=0; const int = setInterval(()=>{ SFX.spark(); f++; if(f>15){ clearInterval(int); window.isFlickering=false; } }, 100);
+                    
                     document.getElementById('finale-sub').style.opacity=1; document.getElementById('finale-sub').style.transform='translateY(0)';
-                    setTimeout(() => { const msgUI = document.getElementById('custom-msg-ui'); msgUI.style.display = 'block'; setTimeout(() => { msgUI.classList.remove('opacity-0', 'translate-y-10'); }, 50); }, 2500);
+                    
+                    // Reveal Custom Message Input
+                    setTimeout(() => {
+                        const m = document.getElementById('custom-msg-ui');
+                        m.style.display='block';
+                        setTimeout(() => { m.classList.remove('opacity-0', 'translate-y-10'); }, 50);
+                    }, 2500);
                 }, 800);
             }, 2500);
         };
