@@ -5,8 +5,8 @@
     <!-- 
         =======================================================================
         PROTOCOL: ETERNITY
-        VERSION: 5.0.0 (EXTENDED_KERNEL)
-        CODENAME: AMIT_CHARVI_SYNC
+        VERSION: 5.0.1 (STABLE_KERNEL)
+        CODENAME: AMIT_CHARVI_SYNC_PATCHED
         ARCHITECT: SYSTEM_ROOT
         DATE: 2025-11-20
         =======================================================================
@@ -17,18 +17,18 @@
         > RENDERER: Three.js r128 (Custom Shaders)
         > AUDIO: WebAudio API (Procedural Synthesis Engine V4)
         > UI LAYER: TailwindCSS + GSAP 3.12
-        > NETWORK: Discord Webhook Uplink (Encrypted)
+        > INPUT: Hybrid Touch/Keyboard Manager [PATCHED]
         > TARGET: Charvi
         > ORIGIN: Amit
         
-        CHANGE LOG V5:
+        CHANGE LOG V5.0.1:
         ----------------
+        [FIX] Resolved IRQ Conflict in 'Lexicon' Module (Keyboard/Modal Loop)
         [+] Expanded Kernel Boot Logs (Memory Dump 0x000 - 0xFFF)
         [+] Added 'System Registry' for persistent state management
         [+] Detailed CSS Keyframe animations (Frame-by-frame)
         [+] Hardcoded Constellation Data for Starfield
         [+] Audio Frequency Lookup Table (A0 - C8)
-        [+] Optimized D-Pad (Minimalist/Float)
         
         WARNING:
         ----------------
@@ -839,6 +839,10 @@
                 // HIDE D-PAD WHEN HELP IS ACTIVE TO PREVENT OVERLAP
                 document.getElementById('d-pad').style.display = 'none';
                 
+                // [FIX] Force close keyboard on mobile when opening help
+                const hiddenInput = document.getElementById('hidden-keyboard-input');
+                if(hiddenInput) hiddenInput.blur();
+                
                 document.getElementById('love-bar').style.width = '0%';
                 document.getElementById('love-msg').innerText = "Awaiting Love...";
             },
@@ -1051,7 +1055,12 @@
                 const display = document.getElementById('player-typed');
                 const trigger = document.getElementById('keyboard-trigger');
                 input.value = ""; input.focus();
-                this.inputInterval = setInterval(() => { if(document.activeElement !== input) input.focus(); }, 500);
+                
+                // [FIX] Prevents keyboard loop when Help is active
+                this.inputInterval = setInterval(() => { 
+                    if(!helpSystem.active && document.activeElement !== input) input.focus(); 
+                }, 500);
+                
                 trigger.onclick = () => { input.focus(); }; document.getElementById('typing-ui').onclick = () => { input.focus(); };
                 input.oninput = (e) => {
                     const val = e.target.value;
